@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rawTextAdapter, sseAdapter } from "../src/index";
+import { rawTextAdapter, responseTextAdapter, sseAdapter } from "../src/index";
 
 describe("@flowglyph/adapters", () => {
   it("converts text chunks to FlowGlyph events", async () => {
@@ -39,5 +39,52 @@ describe("@flowglyph/adapters", () => {
     }
 
     expect(events).toEqual([{ type: "message.start", messageId: "m1" }]);
+  });
+
+  it("turns a normal text response into paced deltas", async () => {
+    const events = [];
+
+    for await (const event of responseTextAdapter("Hello world", {
+      id: "m1",
+      speed: {
+        chunkSize: 5,
+        delayMs: 0
+      }
+    })) {
+      events.push(event);
+    }
+
+    expect(events).toMatchObject([
+      { type: "message.start", messageId: "m1" },
+      { type: "part.start", messageId: "m1", partId: "m1:text" },
+      { type: "part.delta", delta: "Hello" },
+      { type: "part.delta", delta: " worl" },
+      { type: "part.delta", delta: "d" },
+      { type: "part.end", messageId: "m1", partId: "m1:text" },
+      { type: "message.finish", messageId: "m1", status: "complete" }
+    ]);
+  });
+
+  it("extracts common JSON response fields", async () => {
+    const response = new Response(JSON.stringify({ answer: "JSON answer" }), {
+      headers: {
+        "content-type": "application/json"
+      }
+    });
+    const events = [];
+
+    for await (const event of responseTextAdapter(response, {
+      id: "m1",
+      speed: "instant"
+    })) {
+      events.push(event);
+    }
+
+    expect(events).toContainEqual({
+      type: "part.delta",
+      messageId: "m1",
+      partId: "m1:text",
+      delta: "JSON answer"
+    });
   });
 });

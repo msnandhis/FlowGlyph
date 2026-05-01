@@ -46,12 +46,43 @@ const disable = flow.use({
 ## Adapters
 
 ```ts
-import { rawTextAdapter, sseAdapter } from "@flowglyph/adapters";
+import {
+  rawTextAdapter,
+  responseTextAdapter,
+  sseAdapter
+} from "@flowglyph/adapters";
 ```
 
 ### `rawTextAdapter(input, options?)`
 
 Turns string chunks into one assistant message with one text part.
+
+### `responseTextAdapter(input, options?)`
+
+Turns a normal non-streaming string, `Response`, promise, or JSON response into a paced text stream.
+
+```ts
+const response = await fetch("/api/answer");
+
+await flow.consume(
+  responseTextAdapter(response, {
+    speed: {
+      charsPerSecond: 80,
+      chunkSize: 4
+    }
+  })
+);
+```
+
+Supported speed options:
+
+```ts
+responseTextAdapter(response, { speed: "instant" });
+responseTextAdapter(response, { speed: { delayMs: 24, chunkSize: 4 } });
+responseTextAdapter(response, { speed: { charsPerSecond: 80, chunkSize: 4 } });
+```
+
+For JSON responses, FlowGlyph automatically looks for common fields like `text`, `content`, `message`, `answer`, and `output`. You can also provide `selectText`.
 
 ### `sseAdapter(response, options?)`
 

@@ -1,19 +1,22 @@
-import { rawTextAdapter, sseAdapter } from "@flowglyph/adapters";
+import {
+  rawTextAdapter,
+  responseTextAdapter,
+  sseAdapter
+} from "@flowglyph/adapters";
 import type { FlowGlyphEvent } from "@flowglyph/core";
 import { FlowGlyph, useFlowGlyph } from "@flowglyph/react";
 import { StrictMode, useEffect, useMemo, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-function createDemoStream(text: string) {
-  async function* stream() {
-    for (const token of text.split(/(\s+)/)) {
-      await new Promise((resolve) => setTimeout(resolve, 32));
-      yield token;
+function createDemoStream(text: string, charsPerSecond: number) {
+  return responseTextAdapter(text, {
+    id: `demo-${Date.now()}`,
+    speed: {
+      charsPerSecond,
+      chunkSize: 4
     }
-  }
-
-  return rawTextAdapter(stream(), { id: `demo-${Date.now()}` });
+  });
 }
 
 async function* createOpenAIStream(
@@ -54,6 +57,7 @@ function App() {
   const [submittedMessage, setSubmittedMessage] = useState(draftMessage);
   const [draftModel, setDraftModel] = useState("gpt-5.4-nano");
   const [submittedModel, setSubmittedModel] = useState(draftModel);
+  const [speed, setSpeed] = useState(90);
   const [useOpenAI, setUseOpenAI] = useState(false);
 
   useEffect(() => {
@@ -82,10 +86,11 @@ function App() {
       }
 
       return createDemoStream(
-        "FlowGlyph keeps AI stream rendering focused: normalized events, a tiny core, adapters for providers, and thin framework bindings."
+        "FlowGlyph keeps AI stream rendering focused: normalized events, a tiny core, adapters for providers, and thin framework bindings.",
+        speed
       );
     },
-    [run, submittedMessage, submittedModel, useOpenAI]
+    [run, speed, submittedMessage, submittedModel, useOpenAI]
   );
 
   const restart = () => setRun((value) => value + 1);
@@ -140,6 +145,20 @@ function App() {
             <option value="gpt-5.1" />
           </datalist>
           <button type="submit">Stream OpenAI</button>
+        </div>
+
+        <div className="speed-row">
+          <label htmlFor="speed">Demo speed</label>
+          <input
+            id="speed"
+            max="180"
+            min="20"
+            onChange={(event) => setSpeed(Number(event.target.value))}
+            step="10"
+            type="range"
+            value={speed}
+          />
+          <output htmlFor="speed">{speed} chars/s</output>
         </div>
       </form>
 

@@ -94,6 +94,24 @@ input:focus {
   grid-template-columns: minmax(90px, 120px) minmax(160px, 1fr) auto;
 }
 
+.speed-row {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(90px, 120px) minmax(160px, 1fr) minmax(90px, auto);
+}
+
+input[type="range"] {
+  accent-color: #17251c;
+  padding: 0;
+}
+
+output {
+  color: #4b6254;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .toolbar {
   display: flex;
   gap: 10px;
@@ -133,6 +151,10 @@ input:focus {
   }
 
   .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .speed-row {
     grid-template-columns: 1fr;
   }
 }

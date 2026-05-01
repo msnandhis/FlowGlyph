@@ -6,6 +6,19 @@ export type RawTextAdapterOptions = {
   role?: "assistant" | "user" | "system";
 };
 
+export type ResponseTextAdapterSpeed =
+  | "instant"
+  | {
+      charsPerSecond?: number;
+      delayMs?: number;
+      chunkSize?: number;
+    };
+
+export type ResponseTextAdapterOptions = RawTextAdapterOptions & {
+  speed?: ResponseTextAdapterSpeed;
+  selectText?: (value: unknown) => string;
+};
+
 export async function* rawTextAdapter(
   input: AsyncIterable<string> | Iterable<string> | ReadableStream<Uint8Array>,
   options: RawTextAdapterOptions = {}
@@ -37,6 +50,29 @@ export async function* rawTextAdapter(
 
   yield { type: "part.end", messageId, partId };
   yield { type: "message.finish", messageId, status: "complete" };
+}
+
+export async function* responseTextAdapter(
+  input: string | Promise<string> | Response | Promise<Response> | unknown,
+  options: ResponseTextAdapterOptions = {}
+): AsyncIterable<FlowGlyphEvent> {
+  const text = await resolveResponseText(input, options.selectText);
+  const speed = normalizeSpeed(options.speed);
+  const chunks = chunkText(text, speed.chunkSize);
+
+  if (speed.delayMs === 0) {
+    yield* rawTextAdapter(chunks, options);
+    return;
+  }
+
+  async function* pacedChunks() {
+    for (const chunk of chunks) {
+      await delay(speed.delayMs);
+      yield chunk;
+    }
+  }
+
+  yield* rawTextAdapter(pacedChunks(), options);
 }
 
 export type FlowGlyphEventsAdapterOptions = {
@@ -342,6 +378,91 @@ function isResponse(value: unknown): value is Response {
 
 function createId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+async function resolveResponseText(
+  input: string | Promise<string> | Response | Promise<Response> | unknown,
+  selectText?: (value: unknown) => string
+) {
+  const resolved = await input;
+
+  if (typeof resolved === "string") return resolved;
+
+  if (isResponse(resolved)) {
+    const contentType = resolved.headers.get("content-type") ?? "";
+
+    if (contentType.includes("application/json")) {
+      const value = (await resolved.json()) as unknown;
+      return selectText ? selectText(value) : defaultJsonText(value);
+    }
+
+    return resolved.text();
+  }
+
+  return selectText ? selectText(resolved) : defaultJsonText(resolved);
+}
+
+function defaultJsonText(value: unknown) {
+  if (typeof value === "string") return value;
+
+  if (typeof value === "object" && value !== null) {
+    const record = value as Record<string, unknown>;
+
+    for (const key of ["text", "content", "message", "answer", "output"]) {
+      if (typeof record[key] === "string") return record[key];
+    }
+  }
+
+  return JSON.stringify(value, null, 2);
+}
+
+function normalizeSpeed(speed: ResponseTextAdapterSpeed | undefined) {
+  if (speed === "instant") {
+    return {
+      chunkSize: Number.POSITIVE_INFINITY,
+      delayMs: 0
+    };
+  }
+
+  const chunkSize = Math.max(1, speed?.chunkSize ?? 4);
+
+  if (typeof speed?.delayMs === "number") {
+    return {
+      chunkSize,
+      delayMs: Math.max(0, speed.delayMs)
+    };
+  }
+
+  if (typeof speed?.charsPerSecond === "number" && speed.charsPerSecond > 0) {
+    return {
+      chunkSize,
+      delayMs: Math.max(0, Math.round((chunkSize / speed.charsPerSecond) * 1000))
+    };
+  }
+
+  return {
+    chunkSize,
+    delayMs: 24
+  };
+}
+
+function chunkText(text: string, chunkSize: number) {
+  if (!Number.isFinite(chunkSize) || chunkSize >= text.length) {
+    return [text];
+  }
+
+  const chunks: string[] = [];
+
+  for (let index = 0; index < text.length; index += chunkSize) {
+    chunks.push(text.slice(index, index + chunkSize));
+  }
+
+  return chunks;
+}
+
+function delay(delayMs: number) {
+  if (delayMs === 0) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
 function unknownEvent(provider: string | undefined, raw: unknown): FlowGlyphEvent {
