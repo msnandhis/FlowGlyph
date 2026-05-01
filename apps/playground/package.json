@@ -1,0 +1,26 @@
+{
+  "name": "@flowglyph/playground",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@flowglyph/adapters": "workspace:*",
+    "@flowglyph/core": "workspace:*",
+    "@flowglyph/dom": "workspace:*",
+    "@flowglyph/react": "workspace:*",
+    "@vitejs/plugin-react": "^6.0.1",
+    "vite": "^8.0.10",
+    "typescript": "^6.0.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3"
+  }
+}

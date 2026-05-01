@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.turbo/
+.vite/
+coverage/
+*.tsbuildinfo
+apps/playground/dist/
+apps/playground/node_modules/
+packages/*/dist/
+packages/*/node_modules/
