@@ -1,12 +1,39 @@
 {
   "name": "@flowglyph/dom",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Minimal DOM renderer for FlowGlyph.",
   "type": "module",
+  "license": "MIT",
+  "author": "Nandhis",
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "ai",
+    "ai-ui",
+    "llm",
+    "streaming",
+    "typescript",
+    "dom",
+    "framework-agnostic"
+  ],
+  "homepage": "https://github.com/msnandhis/FlowGlyph#readme",
+  "bugs": {
+    "url": "https://github.com/msnandhis/FlowGlyph/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msnandhis/FlowGlyph.git",
+    "directory": "packages/dom"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,7 +48,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@flowglyph/core": "workspace:*"
+    "@flowglyph/core": "workspace:0.1.0"
   },
   "devDependencies": {
     "vitest": "^4.1.5"

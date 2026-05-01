@@ -1,12 +1,39 @@
 {
   "name": "@flowglyph/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Framework-agnostic core for rendering AI response streams.",
   "type": "module",
+  "license": "MIT",
+  "author": "Nandhis",
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "ai",
+    "ai-sdk",
+    "llm",
+    "streaming",
+    "typescript",
+    "framework-agnostic",
+    "server-sent-events"
+  ],
+  "homepage": "https://github.com/msnandhis/FlowGlyph#readme",
+  "bugs": {
+    "url": "https://github.com/msnandhis/FlowGlyph/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msnandhis/FlowGlyph.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

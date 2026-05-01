@@ -1,12 +1,39 @@
 {
   "name": "@flowglyph/react",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Thin React bindings for FlowGlyph.",
   "type": "module",
+  "license": "MIT",
+  "author": "Nandhis",
   "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "ai",
+    "ai-ui",
+    "ai-sdk",
+    "llm",
+    "react",
+    "streaming",
+    "typescript"
+  ],
+  "homepage": "https://github.com/msnandhis/FlowGlyph#readme",
+  "bugs": {
+    "url": "https://github.com/msnandhis/FlowGlyph/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msnandhis/FlowGlyph.git",
+    "directory": "packages/react"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -21,11 +48,11 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@flowglyph/core": "workspace:*",
+    "@flowglyph/core": "0.1.0",
     "react": ">=18.3.0"
   },
   "devDependencies": {
-    "@flowglyph/core": "workspace:*",
+    "@flowglyph/core": "workspace:0.1.0",
     "@types/react": "^19.2.7",
     "react": "^19.2.5"
   }

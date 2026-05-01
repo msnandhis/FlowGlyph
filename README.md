@@ -40,6 +40,24 @@ It focuses on one job:
 
 Future packages may include markdown, code highlighting, Vue, Angular, Svelte, Solid, analytics, enterprise observability, and advanced renderers.
 
+## Install
+
+```sh
+pnpm add @flowglyph/core @flowglyph/adapters
+```
+
+For DOM rendering:
+
+```sh
+pnpm add @flowglyph/dom
+```
+
+For React:
+
+```sh
+pnpm add @flowglyph/react react
+```
+
 ## Quick Start
 
 ```ts
@@ -79,8 +97,41 @@ pnpm install
 pnpm build
 pnpm typecheck
 pnpm test
+pnpm pack:dry-run
 pnpm dev
 ```
+
+## Publishing
+
+Current package version: `0.1.0`.
+
+The public npm packages are prepared as scoped packages:
+
+```txt
+@flowglyph/core
+@flowglyph/adapters
+@flowglyph/dom
+@flowglyph/react
+```
+
+Before publishing:
+
+```sh
+pnpm install
+pnpm typecheck
+pnpm test
+pnpm pack:dry-run
+pnpm -r --filter './packages/**' publish --dry-run --access public --no-git-checks
+```
+
+To publish, log in to npm with an account that can publish the `@flowglyph` scope, then publish from the repository root:
+
+```sh
+npm login
+pnpm -r --filter './packages/**' publish --access public --no-git-checks
+```
+
+Publishing is intentionally manual for now.
 
 ## Key Principles
 

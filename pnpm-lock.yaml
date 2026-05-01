@@ -64,7 +64,7 @@ importers:
   packages/adapters:
     dependencies:
       '@flowglyph/core':
-        specifier: workspace:*
+        specifier: workspace:0.1.0
         version: link:../core
     devDependencies:
       vitest:
@@ -80,7 +80,7 @@ importers:
   packages/dom:
     dependencies:
       '@flowglyph/core':
-        specifier: workspace:*
+        specifier: workspace:0.1.0
         version: link:../core
     devDependencies:
       vitest:
@@ -90,7 +90,7 @@ importers:
   packages/react:
     devDependencies:
       '@flowglyph/core':
-        specifier: workspace:*
+        specifier: workspace:0.1.0
         version: link:../core
       '@types/react':
         specifier: ^19.2.7
