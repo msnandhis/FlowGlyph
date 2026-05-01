@@ -1,0 +1,358 @@
+import type { FlowGlyphEvent, FlowGlyphPartKind } from "@flowglyph/core";
+
+export type RawTextAdapterOptions = {
+  id?: string;
+  partId?: string;
+  role?: "assistant" | "user" | "system";
+};
+
+export async function* rawTextAdapter(
+  input: AsyncIterable<string> | Iterable<string> | ReadableStream<Uint8Array>,
+  options: RawTextAdapterOptions = {}
+): AsyncIterable<FlowGlyphEvent> {
+  const messageId = options.id ?? createId("message");
+  const partId = options.partId ?? `${messageId}:text`;
+
+  yield {
+    type: "message.start",
+    messageId,
+    role: options.role ?? "assistant"
+  };
+  yield {
+    type: "part.start",
+    messageId,
+    partId,
+    kind: "text"
+  };
+
+  for await (const chunk of toTextChunks(input)) {
+    if (chunk.length === 0) continue;
+    yield {
+      type: "part.delta",
+      messageId,
+      partId,
+      delta: chunk
+    };
+  }
+
+  yield { type: "part.end", messageId, partId };
+  yield { type: "message.finish", messageId, status: "complete" };
+}
+
+export type FlowGlyphEventsAdapterOptions = {
+  provider?: string;
+};
+
+export async function* flowGlyphEventsAdapter(
+  input:
+    | AsyncIterable<FlowGlyphEvent>
+    | Iterable<FlowGlyphEvent>
+    | ReadableStream<Uint8Array>
+    | Response,
+  options: FlowGlyphEventsAdapterOptions = {}
+): AsyncIterable<FlowGlyphEvent> {
+  if (isResponse(input)) {
+    yield* flowGlyphEventsAdapter(input.body!, options);
+    return;
+  }
+
+  if (isReadableStream(input)) {
+    let buffer = "";
+
+    for await (const chunk of toTextChunks(input)) {
+      buffer += chunk;
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        yield parseFlowGlyphEvent(trimmed, options.provider);
+      }
+    }
+
+    if (buffer.trim()) {
+      yield parseFlowGlyphEvent(buffer.trim(), options.provider);
+    }
+
+    return;
+  }
+
+  yield* input;
+}
+
+export type SSEMessage = {
+  event: string;
+  data: string;
+  id?: string;
+  retry?: number;
+};
+
+export async function* parseSSE(
+  input: Response | ReadableStream<Uint8Array>
+): AsyncIterable<SSEMessage> {
+  const stream = isResponse(input) ? input.body : input;
+
+  if (!stream) {
+    return;
+  }
+
+  let event = "message";
+  let data: string[] = [];
+  let id: string | undefined;
+  let retry: number | undefined;
+  let buffer = "";
+
+  const flush = function* () {
+    if (data.length === 0) return;
+    const message: SSEMessage = {
+      event,
+      data: data.join("\n")
+    };
+    if (id !== undefined) message.id = id;
+    if (retry !== undefined) message.retry = retry;
+    yield message;
+    event = "message";
+    data = [];
+    retry = undefined;
+  };
+
+  for await (const chunk of toTextChunks(stream)) {
+    buffer += chunk;
+    const lines = buffer.split(/\r\n|\r|\n/);
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (line === "") {
+        yield* flush();
+        continue;
+      }
+
+      if (line.startsWith(":")) continue;
+
+      const colon = line.indexOf(":");
+      const field = colon >= 0 ? line.slice(0, colon) : line;
+      const value =
+        colon >= 0
+          ? line.slice(colon + 1).replace(/^ /, "")
+          : "";
+
+      if (field === "event") event = value;
+      if (field === "data") data.push(value);
+      if (field === "id") id = value;
+      if (field === "retry") {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) retry = parsed;
+      }
+    }
+  }
+
+  if (buffer.length > 0) {
+    if (buffer.startsWith("data:")) data.push(buffer.slice(5).replace(/^ /, ""));
+  }
+
+  yield* flush();
+}
+
+export type SSEAdapterOptions = {
+  provider?: string;
+};
+
+export async function* sseAdapter(
+  input: Response | ReadableStream<Uint8Array>,
+  options: SSEAdapterOptions = {}
+): AsyncIterable<FlowGlyphEvent> {
+  for await (const message of parseSSE(input)) {
+    if (message.data === "[DONE]") break;
+
+    try {
+      yield parseFlowGlyphEvent(message.data, options.provider);
+    } catch {
+      yield unknownEvent(options.provider, {
+        event: message.event,
+        data: message.data,
+        id: message.id
+      });
+    }
+  }
+}
+
+export type VercelUIMessageStreamAdapterOptions = {
+  messageId?: string;
+};
+
+export async function* vercelUIMessageStreamAdapter(
+  input: Response | ReadableStream<Uint8Array>,
+  options: VercelUIMessageStreamAdapterOptions = {}
+): AsyncIterable<FlowGlyphEvent> {
+  const messageId = options.messageId ?? createId("vercel");
+
+  for await (const message of parseSSE(input)) {
+    if (message.data === "[DONE]") break;
+
+    let part: { type?: string; id?: string; text?: string; delta?: string; [key: string]: unknown };
+
+    try {
+      part = JSON.parse(message.data);
+    } catch {
+      yield { type: "unknown", provider: "vercel", raw: message };
+      continue;
+    }
+
+    yield* mapVercelPart(part, messageId);
+  }
+}
+
+function* mapVercelPart(
+  part: { type?: string; id?: string; text?: string; delta?: string; [key: string]: unknown },
+  fallbackMessageId: string
+): Iterable<FlowGlyphEvent> {
+  const messageId =
+    typeof part.messageId === "string" ? part.messageId : fallbackMessageId;
+  const partId = part.id ?? `${messageId}:${part.type ?? "part"}`;
+
+  if (part.type === "start") {
+    yield { type: "message.start", messageId, role: "assistant" };
+    return;
+  }
+
+  if (part.type === "finish") {
+    yield { type: "message.finish", messageId, status: "complete" };
+    return;
+  }
+
+  if (part.type === "abort") {
+    yield { type: "message.finish", messageId, status: "aborted" };
+    return;
+  }
+
+  if (part.type === "text-start") {
+    yield { type: "part.start", messageId, partId, kind: "text" };
+    return;
+  }
+
+  if (part.type === "text-delta") {
+    yield {
+      type: "part.delta",
+      messageId,
+      partId,
+      delta: part.delta ?? part.text ?? ""
+    };
+    return;
+  }
+
+  if (part.type === "text-end") {
+    yield { type: "part.end", messageId, partId };
+    return;
+  }
+
+  if (part.type === "error") {
+    yield {
+      type: "error",
+      messageId,
+      error: {
+        message:
+          typeof part.errorText === "string"
+            ? part.errorText
+            : "The stream returned an error."
+      },
+      recoverable: true
+    };
+    return;
+  }
+
+  if (typeof part.type === "string") {
+    const kind = mapVercelKind(part.type);
+    if (kind) {
+      yield {
+        type: "part.update",
+        messageId,
+        partId,
+        state: "streaming",
+        value: part
+      };
+      return;
+    }
+  }
+
+  yield { type: "unknown", provider: "vercel", raw: part };
+}
+
+function mapVercelKind(type: string): FlowGlyphPartKind | undefined {
+  if (type.startsWith("reasoning")) return "reasoning";
+  if (type.startsWith("tool-")) return "tool";
+  if (type.startsWith("data-")) return "data";
+  if (type.startsWith("source-")) return "source";
+  if (type === "file") return "file";
+  return undefined;
+}
+
+async function* toTextChunks(
+  input: AsyncIterable<string> | Iterable<string> | ReadableStream<Uint8Array>
+): AsyncIterable<string> {
+  if (isReadableStream(input)) {
+    const decoder = new TextDecoder();
+    const reader = input.getReader();
+
+    try {
+      while (true) {
+        const result = await reader.read();
+        if (result.done) break;
+        yield decoder.decode(result.value, { stream: true });
+      }
+
+      const tail = decoder.decode();
+      if (tail) yield tail;
+    } finally {
+      reader.releaseLock();
+    }
+
+    return;
+  }
+
+  yield* input;
+}
+
+function parseFlowGlyphEvent(raw: string, provider?: string): FlowGlyphEvent {
+  const value = JSON.parse(raw) as unknown;
+
+  if (isFlowGlyphEvent(value)) {
+    return value;
+  }
+
+  return unknownEvent(provider, value);
+}
+
+function isFlowGlyphEvent(value: unknown): value is FlowGlyphEvent {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    typeof (value as { type: unknown }).type === "string"
+  );
+}
+
+function isReadableStream(value: unknown): value is ReadableStream<Uint8Array> {
+  return typeof ReadableStream !== "undefined" && value instanceof ReadableStream;
+}
+
+function isResponse(value: unknown): value is Response {
+  return typeof Response !== "undefined" && value instanceof Response;
+}
+
+function createId(prefix: string) {
+  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function unknownEvent(provider: string | undefined, raw: unknown): FlowGlyphEvent {
+  return provider
+    ? {
+        type: "unknown",
+        provider,
+        raw
+      }
+    : {
+        type: "unknown",
+        raw
+      };
+}
