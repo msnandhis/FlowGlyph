@@ -41,45 +41,13 @@ function openAIStreamRoute(env: Record<string, string>): Plugin {
         }
 
         try {
-          const apiKey = env.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
-
-          if (!apiKey) {
-            writeErrorStream(
-              res,
-              "Missing OPENAI_API_KEY. Add it to FlowGlyph/.env or your shell environment."
-            );
-            return;
-          }
-
-          const body = await readJsonBody(req);
-          const prompt =
-            typeof body.message === "string" && body.message.trim()
-              ? body.message.trim()
-              : "Explain why streaming UI matters in AI apps.";
-          const model =
-            typeof body.model === "string" && body.model.trim()
-              ? body.model.trim()
-              : env.OPENAI_MODEL || process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL;
+          const upstream = await createOpenAIResponse(req, env);
 
           res.writeHead(200, {
             "Content-Type": "text/event-stream; charset=utf-8",
             "Cache-Control": "no-cache, no-transform",
             Connection: "keep-alive",
             "X-Accel-Buffering": "no"
-          });
-
-          const upstream = await fetch("https://api.openai.com/v1/responses", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${apiKey}`,
-              "Content-Type": "application/json",
-              Accept: "text/event-stream"
-            },
-            body: JSON.stringify({
-              model,
-              input: prompt,
-              stream: true
-            })
           });
 
           if (!upstream.ok || !upstream.body) {
@@ -108,8 +76,99 @@ function openAIStreamRoute(env: Record<string, string>): Plugin {
           writeErrorStream(res, message);
         }
       });
+
+      server.middlewares.use("/api/openai/raw", async (req, res, next) => {
+        if (req.method !== "POST") {
+          next();
+          return;
+        }
+
+        try {
+          const upstream = await createOpenAIResponse(req, env);
+
+          if (!upstream.ok || !upstream.body) {
+            const errorText = await upstream.text();
+            writeRawOpenAIError(
+              res,
+              `OpenAI request failed (${upstream.status}): ${errorText}`
+            );
+            return;
+          }
+
+          res.writeHead(200, {
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            Connection: "keep-alive",
+            "X-Accel-Buffering": "no"
+          });
+
+          await pipeRawOpenAIStream(upstream.body, res);
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Unknown OpenAI playground error.";
+
+          writeRawOpenAIError(res, message);
+        }
+      });
     }
   };
+}
+
+async function createOpenAIResponse(
+  req: IncomingMessage,
+  env: Record<string, string>
+) {
+  const apiKey = env.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "Missing OPENAI_API_KEY. Add it to FlowGlyph/.env or your shell environment."
+    );
+  }
+
+  const body = await readJsonBody(req);
+  const prompt =
+    typeof body.message === "string" && body.message.trim()
+      ? body.message.trim()
+      : "Explain why streaming UI matters in AI apps.";
+  const model =
+    typeof body.model === "string" && body.model.trim()
+      ? body.model.trim()
+      : env.OPENAI_MODEL || process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL;
+
+  return fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      Accept: "text/event-stream"
+    },
+    body: JSON.stringify({
+      model,
+      input: prompt,
+      stream: true
+    })
+  });
+}
+
+async function pipeRawOpenAIStream(
+  body: ReadableStream<Uint8Array>,
+  res: ServerResponse
+) {
+  const reader = body.getReader();
+
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      res.write(chunk.value);
+    }
+  } finally {
+    reader.releaseLock();
+    res.end();
+  }
 }
 
 async function pipeOpenAIResponsesStream(
@@ -262,6 +321,16 @@ function writeErrorStream(res: ServerResponse, message: string) {
   });
 
   sendMessageError(res, message);
+  res.end();
+}
+
+function writeRawOpenAIError(res: ServerResponse, message: string) {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive"
+  });
+  res.write(`data: ${JSON.stringify({ type: "error", error: { message } })}\n\n`);
   res.end();
 }
 

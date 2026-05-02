@@ -29,6 +29,12 @@ importers:
       '@flowglyph/adapters':
         specifier: workspace:*
         version: link:../../packages/adapters
+      '@flowglyph/adapters-openai':
+        specifier: workspace:*
+        version: link:../../packages/adapters-openai
+      '@flowglyph/code':
+        specifier: workspace:*
+        version: link:../../packages/code
       '@flowglyph/core':
         specifier: workspace:*
         version: link:../../packages/core

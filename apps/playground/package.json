@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@flowglyph/adapters": "workspace:*",
+    "@flowglyph/adapters-openai": "workspace:*",
+    "@flowglyph/code": "workspace:*",
     "@flowglyph/core": "workspace:*",
     "@flowglyph/dom": "workspace:*",
     "@flowglyph/markdown": "workspace:*",

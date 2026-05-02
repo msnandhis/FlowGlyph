@@ -3,25 +3,211 @@ import {
   responseTextAdapter,
   sseAdapter
 } from "@flowglyph/adapters";
-import type { FlowGlyphEvent } from "@flowglyph/core";
+import { openAIResponsesAdapter } from "@flowglyph/adapters-openai";
+import { extractCodeFences } from "@flowglyph/code";
+import type { FlowGlyphEvent, FlowGlyphMode } from "@flowglyph/core";
 import { markdownToHtml } from "@flowglyph/markdown";
-import { FlowGlyph, useFlowGlyph } from "@flowglyph/react";
-import { StrictMode, useEffect, useMemo, useState, type FormEvent } from "react";
+import { FlowGlyphView, useFlowGlyphStream } from "@flowglyph/react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import "@flowglyph/styles/styles.css";
 import "./styles.css";
 
-function createDemoStream(text: string, charsPerSecond: number) {
-  return responseTextAdapter(text, {
-    id: `demo-${Date.now()}`,
+type PlaygroundCase =
+  | "response"
+  | "markdown"
+  | "tool"
+  | "conversation"
+  | "single"
+  | "openai-normalized"
+  | "openai-adapter";
+
+type CaseConfig = {
+  id: PlaygroundCase;
+  title: string;
+  note: string;
+};
+
+const cases: CaseConfig[] = [
+  {
+    id: "response",
+    title: "Normal response",
+    note: "Tests non-streaming API text with user-controlled pacing."
+  },
+  {
+    id: "markdown",
+    title: "Markdown + code",
+    note: "Tests markdown rendering, fenced code detection, and npm styles."
+  },
+  {
+    id: "tool",
+    title: "Tool calls",
+    note: "Tests status parts, tool-call state, JSON values, and completion."
+  },
+  {
+    id: "conversation",
+    title: "Conversation mode",
+    note: "Keeps multiple messages in state."
+  },
+  {
+    id: "single",
+    title: "Single mode",
+    note: "Keeps only the latest message for answer boxes or formatters."
+  },
+  {
+    id: "openai-normalized",
+    title: "OpenAI route",
+    note: "Tests server-normalized FlowGlyph SSE from a real OpenAI stream."
+  },
+  {
+    id: "openai-adapter",
+    title: "OpenAI adapter",
+    note: "Tests raw OpenAI SSE parsed in the browser by @flowglyph/adapters-openai."
+  }
+];
+
+const markdownFixture = `### Markdown and code
+
+FlowGlyph can render **basic markdown** while keeping advanced renderers optional.
+
+- tiny escaped markdown helper
+- code fences are detected separately
+- CSS ships through npm
+
+\`\`\`ts
+import { responseTextAdapter } from "@flowglyph/adapters";
+
+await flow.consume(
+  responseTextAdapter("Hello from a normal API response", {
+    speed: { charsPerSecond: 90 }
+  })
+);
+\`\`\``;
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function* pacedEvents(
+  events: FlowGlyphEvent[],
+  delayMs: number
+): AsyncIterable<FlowGlyphEvent> {
+  for (const event of events) {
+    await delay(delayMs);
+    yield event;
+  }
+}
+
+function createResponseDemo(speed: number) {
+  return responseTextAdapter(
+    "This looks like streaming, but it started as one normal API response. Use it for REST endpoints, cached answers, or providers that do not stream.",
+    {
+      id: `response-${Date.now()}`,
+      speed: {
+        charsPerSecond: speed,
+        chunkSize: 4
+      }
+    }
+  );
+}
+
+function createMarkdownDemo(speed: number) {
+  return responseTextAdapter(markdownFixture, {
+    id: `markdown-${Date.now()}`,
     speed: {
-      charsPerSecond,
-      chunkSize: 4
+      charsPerSecond: speed,
+      chunkSize: 8
     }
   });
 }
 
-async function* createOpenAIStream(
+function createToolDemo() {
+  const id = `tool-${Date.now()}`;
+  const statusPart = `${id}:status`;
+  const toolPart = `${id}:tool`;
+  const textPart = `${id}:text`;
+
+  return pacedEvents(
+    [
+      { type: "message.start", messageId: id, role: "assistant" },
+      {
+        type: "part.start",
+        messageId: id,
+        partId: statusPart,
+        kind: "status",
+        name: "Planning tool call"
+      },
+      {
+        type: "part.delta",
+        messageId: id,
+        partId: statusPart,
+        delta: "Checking project status"
+      },
+      { type: "part.end", messageId: id, partId: statusPart },
+      {
+        type: "part.start",
+        messageId: id,
+        partId: toolPart,
+        kind: "tool",
+        name: "search_docs"
+      },
+      {
+        type: "part.update",
+        messageId: id,
+        partId: toolPart,
+        state: "streaming",
+        label: "search_docs",
+        value: {
+          query: "FlowGlyph streaming SDK",
+          limit: 3
+        }
+      },
+      {
+        type: "part.update",
+        messageId: id,
+        partId: toolPart,
+        state: "complete",
+        value: {
+          query: "FlowGlyph streaming SDK",
+          results: ["core", "adapters", "styles"]
+        }
+      },
+      { type: "part.end", messageId: id, partId: toolPart },
+      { type: "part.start", messageId: id, partId: textPart, kind: "text" },
+      {
+        type: "part.delta",
+        messageId: id,
+        partId: textPart,
+        delta: "Tool rendering works: status, JSON payloads, and final text are separate parts."
+      },
+      { type: "part.end", messageId: id, partId: textPart },
+      { type: "message.finish", messageId: id, status: "complete" }
+    ],
+    220
+  );
+}
+
+async function* createConversationDemo(): AsyncIterable<FlowGlyphEvent> {
+  yield* rawTextAdapter(["First answer stays in conversation mode."], {
+    id: `conversation-a-${Date.now()}`
+  });
+  await delay(300);
+  yield* rawTextAdapter(["Second answer is appended as a new message."], {
+    id: `conversation-b-${Date.now()}`
+  });
+}
+
+async function* createSingleDemo(): AsyncIterable<FlowGlyphEvent> {
+  yield* rawTextAdapter(["This first message will be replaced."], {
+    id: `single-a-${Date.now()}`
+  });
+  await delay(550);
+  yield* rawTextAdapter(["Only this latest message remains in single mode."], {
+    id: `single-b-${Date.now()}`
+  });
+}
+
+async function* createOpenAINormalizedStream(
   message: string,
   model: string
 ): AsyncIterable<FlowGlyphEvent> {
@@ -36,23 +222,100 @@ async function* createOpenAIStream(
   yield* sseAdapter(response, { provider: "openai" });
 }
 
-function Controls() {
-  const flow = useFlowGlyph();
+async function* createOpenAIAdapterStream(
+  message: string,
+  model: string
+): AsyncIterable<FlowGlyphEvent> {
+  const response = await fetch("/api/openai/raw", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ message, model })
+  });
+
+  yield* openAIResponsesAdapter(response);
+}
+
+function getMode(activeCase: PlaygroundCase): FlowGlyphMode {
+  return activeCase === "single" ? "single" : "conversation";
+}
+
+function createEvents(
+  activeCase: PlaygroundCase,
+  speed: number,
+  message: string,
+  model: string
+) {
+  if (activeCase === "response") return createResponseDemo(speed);
+  if (activeCase === "markdown") return createMarkdownDemo(speed);
+  if (activeCase === "tool") return createToolDemo();
+  if (activeCase === "conversation") return createConversationDemo();
+  if (activeCase === "single") return createSingleDemo();
+  if (activeCase === "openai-normalized") {
+    return createOpenAINormalizedStream(message, model);
+  }
+  return createOpenAIAdapterStream(message, model);
+}
+
+function StreamSurface({
+  activeCase,
+  message,
+  model,
+  onRetry,
+  speed
+}: {
+  activeCase: PlaygroundCase;
+  message: string;
+  model: string;
+  onRetry: () => void;
+  speed: number;
+}) {
+  const events = useMemo(
+    () => createEvents(activeCase, speed, message, model),
+    [activeCase, message, model, speed]
+  );
+  const { cancel, flow, retry, state } = useFlowGlyphStream({
+    events,
+    mode: getMode(activeCase),
+    onRetry
+  });
+  const codeBlocks = activeCase === "markdown" ? extractCodeFences(markdownFixture) : [];
 
   return (
-    <div className="toolbar">
-      <button type="button" onClick={() => flow.cancel()}>
-        Cancel
-      </button>
-      <button type="button" onClick={() => void flow.retry()}>
-        Retry
-      </button>
-    </div>
+    <section className="result-panel">
+      <div className="result-meta">
+        <div>
+          <strong>{state.status}</strong>
+          <span>{state.messages.length} message(s)</span>
+          <span>{getMode(activeCase)} mode</span>
+          {activeCase === "markdown" ? (
+            <span>{codeBlocks.length} code block(s)</span>
+          ) : null}
+        </div>
+        <div className="toolbar">
+          <button type="button" onClick={cancel}>
+            Cancel
+          </button>
+          <button type="button" onClick={() => void retry()}>
+            Retry
+          </button>
+        </div>
+      </div>
+
+      <FlowGlyphView
+        flow={flow}
+        renderText={(text) => (
+          <span dangerouslySetInnerHTML={{ __html: markdownToHtml(text) }} />
+        )}
+      />
+    </section>
   );
 }
 
 function App() {
   const [run, setRun] = useState(0);
+  const [activeCase, setActiveCase] = useState<PlaygroundCase>("response");
   const [draftMessage, setDraftMessage] = useState(
     "Explain FlowGlyph in three concise bullets."
   );
@@ -60,7 +323,6 @@ function App() {
   const [draftModel, setDraftModel] = useState("gpt-5.4-nano");
   const [submittedModel, setSubmittedModel] = useState(draftModel);
   const [speed, setSpeed] = useState(90);
-  const [useOpenAI, setUseOpenAI] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,19 +343,6 @@ function App() {
       cancelled = true;
     };
   }, []);
-  const events = useMemo(
-    () => {
-      if (useOpenAI) {
-        return createOpenAIStream(submittedMessage, submittedModel);
-      }
-
-      return createDemoStream(
-        "### FlowGlyph\n\n- Normalizes provider streams\n- Renders partial text cleanly\n- Keeps styles optional through npm",
-        speed
-      );
-    },
-    [run, speed, submittedMessage, submittedModel, useOpenAI]
-  );
 
   const restart = () => setRun((value) => value + 1);
 
@@ -101,30 +350,48 @@ function App() {
     event.preventDefault();
     setSubmittedMessage(draftMessage);
     setSubmittedModel(draftModel);
-    setUseOpenAI(true);
+    setActiveCase("openai-adapter");
     restart();
   };
+
+  const selectedCase = cases.find((item) => item.id === activeCase) ?? cases[0]!;
 
   return (
     <main>
       <section className="hero">
         <div>
           <p className="eyebrow">FlowGlyph playground</p>
-          <h1>Lightweight AI stream rendering</h1>
+          <h1>Test every SDK feature</h1>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setUseOpenAI(false);
-            restart();
-          }}
-        >
-          Restart demo
+        <button type="button" onClick={restart}>
+          Restart
         </button>
       </section>
 
+      <section className="case-grid" aria-label="Feature demos">
+        {cases.map((item) => (
+          <button
+            className={item.id === activeCase ? "case-card active" : "case-card"}
+            key={item.id}
+            onClick={() => {
+              setActiveCase(item.id);
+              restart();
+            }}
+            type="button"
+          >
+            <strong>{item.title}</strong>
+            <span>{item.note}</span>
+          </button>
+        ))}
+      </section>
+
       <form className="prompt-panel" onSubmit={submitOpenAI}>
-        <label htmlFor="message">Prompt</label>
+        <div>
+          <h2>{selectedCase.title}</h2>
+          <p>{selectedCase.note}</p>
+        </div>
+
+        <label htmlFor="message">OpenAI prompt</label>
         <textarea
           id="message"
           onChange={(event) => setDraftMessage(event.target.value)}
@@ -135,8 +402,8 @@ function App() {
         <div className="form-row">
           <label htmlFor="model">Model</label>
           <input
-            list="model-options"
             id="model"
+            list="model-options"
             onChange={(event) => setDraftModel(event.target.value)}
             value={draftModel}
           />
@@ -146,14 +413,14 @@ function App() {
             <option value="gpt-5.4" />
             <option value="gpt-5.1" />
           </datalist>
-          <button type="submit">Stream OpenAI</button>
+          <button type="submit">Run OpenAI adapter</button>
         </div>
 
         <div className="speed-row">
-          <label htmlFor="speed">Demo speed</label>
+          <label htmlFor="speed">Text speed</label>
           <input
             id="speed"
-            max="180"
+            max="220"
             min="20"
             onChange={(event) => setSpeed(Number(event.target.value))}
             step="10"
@@ -164,22 +431,18 @@ function App() {
         </div>
       </form>
 
-      <FlowGlyph
-        events={events}
-        key={`${useOpenAI ? "openai" : "demo"}-${run}`}
+      <StreamSurface
+        activeCase={activeCase}
+        key={`${activeCase}-${run}`}
+        message={submittedMessage}
+        model={submittedModel}
         onRetry={restart}
-        renderText={(text) => (
-          <span dangerouslySetInnerHTML={{ __html: markdownToHtml(text) }} />
-        )}
-      >
-        <Controls />
-      </FlowGlyph>
+        speed={speed}
+      />
     </main>
   );
 }
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+  <App />
 );
