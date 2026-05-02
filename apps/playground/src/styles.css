@@ -120,6 +120,34 @@ button:hover {
   color: #4b6254;
 }
 
+.openai-status {
+  align-items: center;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  color: #7c2d12;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+
+.openai-status.ready {
+  background: #eef8f0;
+  border-color: #b9dec1;
+  color: #1f5d2c;
+}
+
+.openai-status strong {
+  flex: 0 0 auto;
+}
+
+.openai-status span {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+}
+
 label {
   color: #344338;
   font-size: 14px;
@@ -155,6 +183,20 @@ input:focus {
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(90px, 120px) minmax(160px, 1fr) minmax(90px, auto);
+}
+
+.openai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.openai-actions button {
+  background: #304f8a;
+}
+
+.openai-actions button:hover {
+  background: #3d5f9e;
 }
 
 input[type="range"] {
@@ -285,6 +327,15 @@ output,
   .form-row,
   .speed-row {
     grid-template-columns: 1fr;
+  }
+
+  .openai-status {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .openai-status span {
+    text-align: left;
   }
 
   .toolbar {

@@ -26,12 +26,15 @@ function openAIStreamRoute(env: Record<string, string>): Plugin {
 
         const model =
           env.OPENAI_MODEL || process.env.OPENAI_MODEL || DEFAULT_OPENAI_MODEL;
+        const hasOpenAIKey = Boolean(
+          env.OPENAI_API_KEY || process.env.OPENAI_API_KEY
+        );
 
         res.writeHead(200, {
           "Content-Type": "application/json; charset=utf-8",
           "Cache-Control": "no-cache"
         });
-        res.end(JSON.stringify({ model }));
+        res.end(JSON.stringify({ hasOpenAIKey, model }));
       });
 
       server.middlewares.use("/api/openai", async (req, res, next) => {
@@ -345,6 +348,12 @@ function sendMessageError(res: ServerResponse, message: string) {
       message
     },
     recoverable: true
+  });
+  sendEvent(res, {
+    type: "message.finish",
+    messageId,
+    status: "error",
+    reason: message
   });
 }
 

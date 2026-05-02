@@ -316,6 +316,7 @@ function StreamSurface({
 function App() {
   const [run, setRun] = useState(0);
   const [activeCase, setActiveCase] = useState<PlaygroundCase>("response");
+  const [hasOpenAIKey, setHasOpenAIKey] = useState(false);
   const [draftMessage, setDraftMessage] = useState(
     "Explain FlowGlyph in three concise bullets."
   );
@@ -323,17 +324,25 @@ function App() {
   const [draftModel, setDraftModel] = useState("gpt-5.4-nano");
   const [submittedModel, setSubmittedModel] = useState(draftModel);
   const [speed, setSpeed] = useState(90);
+  const [submittedSpeed, setSubmittedSpeed] = useState(speed);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadConfig() {
       const response = await fetch("/api/config");
-      const config = (await response.json()) as { model?: string };
+      const config = (await response.json()) as {
+        hasOpenAIKey?: boolean;
+        model?: string;
+      };
 
       if (!cancelled && config.model) {
         setDraftModel(config.model);
         setSubmittedModel(config.model);
+      }
+
+      if (!cancelled) {
+        setHasOpenAIKey(Boolean(config.hasOpenAIKey));
       }
     }
 
@@ -344,13 +353,25 @@ function App() {
     };
   }, []);
 
-  const restart = () => setRun((value) => value + 1);
+  const restart = () => {
+    setRun((value) => value + 1);
+  };
 
-  const submitOpenAI = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const applyDraftSettings = () => {
     setSubmittedMessage(draftMessage);
     setSubmittedModel(draftModel);
-    setActiveCase("openai-adapter");
+    setSubmittedSpeed(speed);
+  };
+
+  const runSelectedCase = (event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault();
+    applyDraftSettings();
+    restart();
+  };
+
+  const runOpenAI = (nextCase: "openai-normalized" | "openai-adapter") => {
+    applyDraftSettings();
+    setActiveCase(nextCase);
     restart();
   };
 
@@ -385,10 +406,19 @@ function App() {
         ))}
       </section>
 
-      <form className="prompt-panel" onSubmit={submitOpenAI}>
+      <form className="prompt-panel" onSubmit={runSelectedCase}>
         <div>
           <h2>{selectedCase.title}</h2>
           <p>{selectedCase.note}</p>
+        </div>
+
+        <div className={hasOpenAIKey ? "openai-status ready" : "openai-status"}>
+          <strong>{hasOpenAIKey ? "OpenAI ready" : "OpenAI key missing"}</strong>
+          <span>
+            {hasOpenAIKey
+              ? "Live provider routes will call the Responses API from the dev server."
+              : "Add OPENAI_API_KEY to FlowGlyph/.env to run live OpenAI cases."}
+          </span>
         </div>
 
         <label htmlFor="message">OpenAI prompt</label>
@@ -413,7 +443,7 @@ function App() {
             <option value="gpt-5.4" />
             <option value="gpt-5.1" />
           </datalist>
-          <button type="submit">Run OpenAI adapter</button>
+          <button type="submit">Run selected test</button>
         </div>
 
         <div className="speed-row">
@@ -429,6 +459,21 @@ function App() {
           />
           <output htmlFor="speed">{speed} chars/s</output>
         </div>
+
+        <div className="openai-actions" aria-label="Live OpenAI runs">
+          <button
+            type="button"
+            onClick={() => runOpenAI("openai-normalized")}
+          >
+            Run OpenAI route
+          </button>
+          <button
+            type="button"
+            onClick={() => runOpenAI("openai-adapter")}
+          >
+            Run OpenAI adapter
+          </button>
+        </div>
       </form>
 
       <StreamSurface
@@ -437,7 +482,7 @@ function App() {
         message={submittedMessage}
         model={submittedModel}
         onRetry={restart}
-        speed={speed}
+        speed={submittedSpeed}
       />
     </main>
   );
