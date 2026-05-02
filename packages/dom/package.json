@@ -1,6 +1,7 @@
 {
   "name": "@flowglyph/dom",
   "version": "0.1.0",
+  "private": true,
   "description": "Minimal DOM renderer for FlowGlyph.",
   "type": "module",
   "license": "MIT",

@@ -4,16 +4,17 @@
 
 - pnpm workspace
 - TypeScript strict mode
-- `@flowglyph/core`
-- `@flowglyph/adapters`
-- `@flowglyph/dom`
-- `@flowglyph/react`
+- single public `flowglyph` package
+- `flowglyph/core`
+- `flowglyph/adapters`
+- `flowglyph/dom`
+- `flowglyph/react`
 - `responseTextAdapter` for normal non-streaming API responses
 - configurable response display speed
-- `@flowglyph/styles`
-- `@flowglyph/markdown`
-- `@flowglyph/code`
-- `@flowglyph/adapters-openai`
+- `flowglyph`
+- `flowglyph/markdown`
+- `flowglyph/code`
+- `flowglyph/adapters/openai`
 - conversation and single-message modes
 - React hook API
 - tool-call renderer in React and DOM

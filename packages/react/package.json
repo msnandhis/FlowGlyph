@@ -1,6 +1,7 @@
 {
   "name": "@flowglyph/react",
   "version": "0.1.0",
+  "private": true,
   "description": "Thin React bindings for FlowGlyph.",
   "type": "module",
   "license": "MIT",

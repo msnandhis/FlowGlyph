@@ -1,11 +1,11 @@
-# @flowglyph/adapters
+# flowglyph/adapters
 
 Lightweight stream adapters for FlowGlyph.
 
 ## Install
 
 ```sh
-pnpm add @flowglyph/adapters @flowglyph/core
+pnpm add flowglyph
 ```
 
 ## Usage
@@ -15,7 +15,7 @@ import {
   paceTextDeltasAdapter,
   responseTextAdapter,
   sseAdapter
-} from "@flowglyph/adapters";
+} from "flowglyph/adapters";
 
 const response = await fetch("/api/chat", { method: "POST" });
 

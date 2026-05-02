@@ -1,17 +1,17 @@
-# @flowglyph/core
+# flowglyph/core
 
 Framework-agnostic core for rendering AI response streams.
 
 ## Install
 
 ```sh
-pnpm add @flowglyph/core
+pnpm add flowglyph
 ```
 
 ## Usage
 
 ```ts
-import { createFlowGlyph } from "@flowglyph/core";
+import { createFlowGlyph } from "flowglyph/core";
 
 const flow = createFlowGlyph();
 

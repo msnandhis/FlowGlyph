@@ -7,7 +7,7 @@ FlowGlyph supports two pacing modes.
 Use `responseTextAdapter()` when your backend returns one complete value and you want it to display like a stream.
 
 ```ts
-import { responseTextAdapter } from "@flowglyph/adapters";
+import { responseTextAdapter } from "flowglyph/adapters";
 
 await flow.consume(
   responseTextAdapter(response, {
@@ -21,7 +21,7 @@ await flow.consume(
 Use `paceTextDeltasAdapter()` when the provider already streams, but you still want control over display speed.
 
 ```ts
-import { paceTextDeltasAdapter, sseAdapter } from "@flowglyph/adapters";
+import { paceTextDeltasAdapter, sseAdapter } from "flowglyph/adapters";
 
 await flow.consume(
   paceTextDeltasAdapter(sseAdapter(response), {

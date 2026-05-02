@@ -1,6 +1,7 @@
 {
   "name": "@flowglyph/adapters",
   "version": "0.1.0",
+  "private": true,
   "description": "Lightweight stream adapters for FlowGlyph.",
   "type": "module",
   "license": "MIT",

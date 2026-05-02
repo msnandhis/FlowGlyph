@@ -3,11 +3,11 @@
 FlowGlyph styles are optional and shipped through npm:
 
 ```sh
-pnpm add @flowglyph/styles
+pnpm add flowglyph
 ```
 
 ```ts
-import "@flowglyph/styles/styles.css";
+import "flowglyph/styles.css";
 ```
 
 The stylesheet covers:
@@ -37,7 +37,7 @@ Override CSS variables in your app:
 Code block copy buttons need the small optional helper:
 
 ```ts
-import { installCodeCopy } from "@flowglyph/code";
+import { installCodeCopy } from "flowglyph/code";
 
 const cleanup = installCodeCopy();
 ```

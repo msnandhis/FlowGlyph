@@ -3,15 +3,15 @@
 Install the React wrapper, adapters, and optional styles:
 
 ```sh
-pnpm add @flowglyph/react @flowglyph/adapters @flowglyph/styles react
+pnpm add flowglyph react
 ```
 
 Render a normal stream:
 
 ```tsx
-import { rawTextAdapter } from "@flowglyph/adapters";
-import { FlowGlyph } from "@flowglyph/react";
-import "@flowglyph/styles/styles.css";
+import { rawTextAdapter } from "flowglyph/adapters";
+import { FlowGlyph } from "flowglyph/react";
+import "flowglyph/styles.css";
 
 export function Answer() {
   return <FlowGlyph events={rawTextAdapter(["Hello", " from FlowGlyph"])} />;
@@ -21,8 +21,8 @@ export function Answer() {
 Use the hook when you need controls:
 
 ```tsx
-import { responseTextAdapter } from "@flowglyph/adapters";
-import { FlowGlyphView, useFlowGlyphStream } from "@flowglyph/react";
+import { responseTextAdapter } from "flowglyph/adapters";
+import { FlowGlyphView, useFlowGlyphStream } from "flowglyph/react";
 
 export function AnswerBox({ text }: { text: string }) {
   const { cancel, flow, retry } = useFlowGlyphStream({
@@ -45,9 +45,9 @@ export function AnswerBox({ text }: { text: string }) {
 Markdown and code blocks:
 
 ```tsx
-import { installCodeCopy } from "@flowglyph/code";
-import { markdownToHtml } from "@flowglyph/markdown";
-import { FlowGlyph } from "@flowglyph/react";
+import { installCodeCopy } from "flowglyph/code";
+import { markdownToHtml } from "flowglyph/markdown";
+import { FlowGlyph } from "flowglyph/react";
 import { useEffect } from "react";
 
 export function MarkdownAnswer({ events }) {

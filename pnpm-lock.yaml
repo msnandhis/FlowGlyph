@@ -26,33 +26,12 @@ importers:
 
   apps/playground:
     dependencies:
-      '@flowglyph/adapters':
-        specifier: workspace:*
-        version: link:../../packages/adapters
-      '@flowglyph/adapters-openai':
-        specifier: workspace:*
-        version: link:../../packages/adapters-openai
-      '@flowglyph/code':
-        specifier: workspace:*
-        version: link:../../packages/code
-      '@flowglyph/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@flowglyph/dom':
-        specifier: workspace:*
-        version: link:../../packages/dom
-      '@flowglyph/markdown':
-        specifier: workspace:*
-        version: link:../../packages/markdown
-      '@flowglyph/react':
-        specifier: workspace:*
-        version: link:../../packages/react
-      '@flowglyph/styles':
-        specifier: workspace:*
-        version: link:../../packages/styles
       '@vitejs/plugin-react':
         specifier: ^6.0.1
         version: 6.0.1(vite@8.0.10(esbuild@0.27.7))
+      flowglyph:
+        specifier: workspace:*
+        version: link:../../packages/flowglyph
       react:
         specifier: ^19.2.5
         version: 19.2.5
@@ -114,6 +93,18 @@ importers:
         specifier: workspace:0.1.0
         version: link:../core
     devDependencies:
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(vite@8.0.10(esbuild@0.27.7))
+
+  packages/flowglyph:
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.7
+        version: 19.2.14
+      react:
+        specifier: ^19.2.5
+        version: 19.2.5
       vitest:
         specifier: ^4.1.5
         version: 4.1.5(vite@8.0.10(esbuild@0.27.7))

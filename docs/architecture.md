@@ -1,18 +1,18 @@
 # FlowGlyph Architecture
 
-FlowGlyph is split into small packages so the default path stays light.
+FlowGlyph is published as one npm package with small subpath modules so the default path stays light.
 
 ```txt
 backend/provider stream
   -> adapter
-  -> @flowglyph/core
+  -> flowglyph/core
   -> renderer
   -> framework wrapper
 ```
 
 ## Core
 
-`@flowglyph/core` is renderless and framework-agnostic.
+`flowglyph/core` is renderless and framework-agnostic.
 
 It owns:
 
@@ -66,9 +66,28 @@ Renderers consume core state.
 
 Implemented:
 
-- `@flowglyph/dom`
-- `@flowglyph/react`
+- `flowglyph/dom`
+- `flowglyph/react`
 
 DOM rendering uses `requestAnimationFrame` to batch visual updates.
 
 React uses `useSyncExternalStore` so React owns rendering while the core remains framework-neutral.
+
+## Public Package
+
+Developers install one package:
+
+```sh
+pnpm add flowglyph
+```
+
+Public subpaths keep features modular:
+
+- `flowglyph/core`
+- `flowglyph/adapters`
+- `flowglyph/adapters/openai`
+- `flowglyph/dom`
+- `flowglyph/react`
+- `flowglyph/markdown`
+- `flowglyph/code`
+- `flowglyph/styles.css`

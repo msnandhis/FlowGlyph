@@ -38,6 +38,11 @@ function openAIStreamRoute(env: Record<string, string>): Plugin {
       });
 
       server.middlewares.use("/api/openai", async (req, res, next) => {
+        if (req.url?.startsWith("/raw")) {
+          next();
+          return;
+        }
+
         if (req.method !== "POST") {
           next();
           return;

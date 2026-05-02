@@ -29,17 +29,18 @@ It focuses on one job:
 
 > Normalize and render AI response streams across providers and frameworks.
 
-## Implemented Package Shape
+## Public Package Shape
 
 ```txt
-@flowglyph/core
-@flowglyph/dom
-@flowglyph/react
-@flowglyph/adapters
-@flowglyph/adapters-openai
-@flowglyph/styles
-@flowglyph/markdown
-@flowglyph/code
+flowglyph
+flowglyph/core
+flowglyph/dom
+flowglyph/react
+flowglyph/adapters
+flowglyph/adapters/openai
+flowglyph/markdown
+flowglyph/code
+flowglyph/styles.css
 ```
 
 Future packages may include Vue, Angular, Svelte, Solid, Anthropic/Gemini adapters, analytics, enterprise observability, and advanced renderers.
@@ -47,34 +48,18 @@ Future packages may include Vue, Angular, Svelte, Solid, Anthropic/Gemini adapte
 ## Install
 
 ```sh
-pnpm add @flowglyph/core @flowglyph/adapters @flowglyph/styles
+pnpm add flowglyph
 ```
 
-For DOM rendering:
-
-```sh
-pnpm add @flowglyph/dom
-```
-
-For React:
-
-```sh
-pnpm add @flowglyph/react react
-```
-
-Optional feature packages:
-
-```sh
-pnpm add @flowglyph/markdown @flowglyph/code @flowglyph/adapters-openai
-```
+For React rendering, also install React if your app does not already have it.
 
 ## Quick Start
 
 ```ts
-import { createFlowGlyph } from "@flowglyph/core";
-import { createDOMRenderer } from "@flowglyph/dom";
-import { sseAdapter } from "@flowglyph/adapters";
-import "@flowglyph/styles/styles.css";
+import { createFlowGlyph } from "flowglyph/core";
+import { createDOMRenderer } from "flowglyph/dom";
+import { sseAdapter } from "flowglyph/adapters";
+import "flowglyph/styles.css";
 
 const flow = createFlowGlyph({ mode: "conversation" });
 const renderer = createDOMRenderer("#answer");
@@ -93,9 +78,9 @@ detach();
 React:
 
 ```tsx
-import { rawTextAdapter } from "@flowglyph/adapters";
-import { FlowGlyph } from "@flowglyph/react";
-import "@flowglyph/styles/styles.css";
+import { rawTextAdapter } from "flowglyph/adapters";
+import { FlowGlyph } from "flowglyph/react";
+import "flowglyph/styles.css";
 
 export function AssistantAnswer() {
   return <FlowGlyph events={rawTextAdapter(["Hello", " world"])} />;
@@ -105,7 +90,7 @@ export function AssistantAnswer() {
 Normal non-streaming responses can be displayed with a paced stream effect:
 
 ```ts
-import { responseTextAdapter } from "@flowglyph/adapters";
+import { responseTextAdapter } from "flowglyph/adapters";
 
 await flow.consume(
   responseTextAdapter(await fetch("/api/answer"), {
@@ -117,7 +102,7 @@ await flow.consume(
 OpenAI Responses API streams can be normalized without bundling the OpenAI SDK:
 
 ```ts
-import { openAIResponsesAdapter } from "@flowglyph/adapters-openai";
+import { openAIResponsesAdapter } from "flowglyph/adapters/openai";
 
 const response = await fetch("/api/openai-stream");
 await flow.consume(openAIResponsesAdapter(response));
@@ -147,17 +132,10 @@ pnpm dev
 
 Current package version: `0.1.0`.
 
-The public npm packages are prepared as scoped packages:
+The public npm package is:
 
 ```txt
-@flowglyph/core
-@flowglyph/adapters
-@flowglyph/dom
-@flowglyph/react
-@flowglyph/adapters-openai
-@flowglyph/styles
-@flowglyph/markdown
-@flowglyph/code
+flowglyph
 ```
 
 Before publishing:
@@ -167,14 +145,14 @@ pnpm install
 pnpm typecheck
 pnpm test
 pnpm pack:dry-run
-pnpm -r --filter './packages/**' publish --dry-run --access public --no-git-checks
+pnpm --filter flowglyph publish --dry-run --access public --no-git-checks
 ```
 
-To publish, log in to npm with an account that can publish the `@flowglyph` scope, then publish from the repository root:
+To publish, log in to npm, then publish from the repository root:
 
 ```sh
 npm login
-pnpm -r --filter './packages/**' publish --access public --no-git-checks
+pnpm publish:npm
 ```
 
 Publishing is intentionally manual for now.
@@ -207,7 +185,7 @@ Implemented:
 - OpenAI Responses API stream adapter
 - normal response pacing with configurable speed
 - conversation and single-message modes
-- optional npm CSS package
+- optional CSS shipped from the same npm package
 - markdown helper package
 - code fence helper package
 - code block language labels, copy helper, and lazy highlighter hook

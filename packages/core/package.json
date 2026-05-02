@@ -1,6 +1,7 @@
 {
   "name": "@flowglyph/core",
   "version": "0.1.0",
+  "private": true,
   "description": "Framework-agnostic core for rendering AI response streams.",
   "type": "module",
   "license": "MIT",

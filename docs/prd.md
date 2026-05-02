@@ -10,16 +10,16 @@ It gives developers a clean way to display streamed text, markdown, code blocks,
 
 Product name: FlowGlyph
 
-Package namespace target: `@flowglyph`
+Public package target: `flowglyph`
 
-Example packages:
+Public subpaths:
 
-- `@flowglyph/core`
-- `@flowglyph/dom`
-- `@flowglyph/react`
-- `@flowglyph/markdown`
-- `@flowglyph/code`
-- `@flowglyph/adapters`
+- `flowglyph/core`
+- `flowglyph/dom`
+- `flowglyph/react`
+- `flowglyph/markdown`
+- `flowglyph/code`
+- `flowglyph/adapters`
 
 ## 3. One-Line Description
 
@@ -298,10 +298,10 @@ They should not:
 
 The first useful version includes:
 
-- `@flowglyph/core`
-- `@flowglyph/dom`
-- `@flowglyph/react`
-- `@flowglyph/adapters`
+- `flowglyph/core`
+- `flowglyph/dom`
+- `flowglyph/react`
+- `flowglyph/adapters`
 - raw text adapter
 - SSE adapter
 - Vercel UI message stream adapter starter
@@ -336,12 +336,14 @@ FlowGlyph/
     wrappers.md
     roadmap.md
   packages/
+    flowglyph/        # public npm package
     core/
     dom/
     react/
     adapters/
     markdown/
     code/
+    styles/
   apps/
     playground/
     docs/
@@ -520,7 +522,7 @@ Mitigation:
 ### Milestone 1: Core Prototype
 
 - create monorepo
-- implement `@flowglyph/core`
+- implement `flowglyph/core`
 - implement event emitter
 - implement state model
 - implement plugin registration
@@ -528,14 +530,14 @@ Mitigation:
 
 ### Milestone 2: First Renderer
 
-- implement `@flowglyph/dom`
+- implement `flowglyph/dom`
 - render text streaming
 - render status and error states
 - support cancel and retry callbacks
 
 ### Milestone 3: React Wrapper
 
-- implement `@flowglyph/react`
+- implement `flowglyph/react`
 - expose simple component
 - expose hook if useful
 - verify no duplicated stream logic

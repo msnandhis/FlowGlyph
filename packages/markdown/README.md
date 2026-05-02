@@ -1,11 +1,11 @@
-# @flowglyph/markdown
+# flowglyph/markdown
 
 Tiny markdown helpers for FlowGlyph text parts.
 
 ```tsx
-import { markdownToHtml } from "@flowglyph/markdown";
-import { FlowGlyph } from "@flowglyph/react";
-import { installCodeCopy } from "@flowglyph/code";
+import { markdownToHtml } from "flowglyph/markdown";
+import { FlowGlyph } from "flowglyph/react";
+import { installCodeCopy } from "flowglyph/code";
 
 useEffect(() => installCodeCopy(), []);
 

@@ -1,9 +1,9 @@
-# @flowglyph/adapters-openai
+# flowglyph/adapters/openai
 
 OpenAI Responses API stream adapter for FlowGlyph.
 
 ```ts
-import { openAIResponsesAdapter } from "@flowglyph/adapters-openai";
+import { openAIResponsesAdapter } from "flowglyph/adapters/openai";
 
 const response = await fetch("/api/openai-stream");
 await flow.consume(openAIResponsesAdapter(response));

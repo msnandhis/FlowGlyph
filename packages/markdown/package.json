@@ -1,6 +1,7 @@
 {
   "name": "@flowglyph/markdown",
   "version": "0.1.0",
+  "private": true,
   "description": "Tiny markdown helpers for FlowGlyph text parts.",
   "type": "module",
   "license": "MIT",

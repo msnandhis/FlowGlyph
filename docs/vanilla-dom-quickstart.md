@@ -3,14 +3,14 @@
 Install the core, DOM renderer, adapters, and optional styles:
 
 ```sh
-pnpm add @flowglyph/core @flowglyph/dom @flowglyph/adapters @flowglyph/styles
+pnpm add flowglyph
 ```
 
 ```ts
-import { createFlowGlyph } from "@flowglyph/core";
-import { createDOMRenderer } from "@flowglyph/dom";
-import { sseAdapter } from "@flowglyph/adapters";
-import "@flowglyph/styles/styles.css";
+import { createFlowGlyph } from "flowglyph/core";
+import { createDOMRenderer } from "flowglyph/dom";
+import { sseAdapter } from "flowglyph/adapters";
+import "flowglyph/styles.css";
 
 const flow = createFlowGlyph({ mode: "conversation" });
 const renderer = createDOMRenderer("#answer");
@@ -29,7 +29,7 @@ detach();
 For normal non-streaming responses:
 
 ```ts
-import { responseTextAdapter } from "@flowglyph/adapters";
+import { responseTextAdapter } from "flowglyph/adapters";
 
 await flow.consume(
   responseTextAdapter(await fetch("/api/answer"), {

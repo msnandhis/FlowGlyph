@@ -3,15 +3,15 @@ import {
   rawTextAdapter,
   responseTextAdapter,
   sseAdapter
-} from "@flowglyph/adapters";
-import { openAIResponsesAdapter } from "@flowglyph/adapters-openai";
-import { extractCodeFences, installCodeCopy } from "@flowglyph/code";
-import type { FlowGlyphEvent, FlowGlyphMode } from "@flowglyph/core";
-import { markdownToHtml } from "@flowglyph/markdown";
-import { FlowGlyphView, useFlowGlyphStream } from "@flowglyph/react";
+} from "flowglyph/adapters";
+import { openAIResponsesAdapter } from "flowglyph/adapters/openai";
+import { extractCodeFences, installCodeCopy } from "flowglyph/code";
+import type { FlowGlyphEvent, FlowGlyphMode } from "flowglyph/core";
+import { markdownToHtml } from "flowglyph/markdown";
+import { FlowGlyphView, useFlowGlyphStream } from "flowglyph/react";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
-import "@flowglyph/styles/styles.css";
+import "flowglyph/styles.css";
 import "./styles.css";
 
 type PlaygroundCase =
@@ -63,7 +63,7 @@ const cases: CaseConfig[] = [
   {
     id: "openai-adapter",
     title: "OpenAI adapter",
-    note: "Tests raw OpenAI SSE parsed in the browser by @flowglyph/adapters-openai."
+    note: "Tests raw OpenAI SSE parsed in the browser by flowglyph/adapters/openai."
   }
 ];
 
@@ -76,7 +76,7 @@ FlowGlyph can render **basic markdown** while keeping advanced renderers optiona
 - CSS ships through npm
 
 \`\`\`ts
-import { responseTextAdapter } from "@flowglyph/adapters";
+import { responseTextAdapter } from "flowglyph/adapters";
 
 await flow.consume(
   responseTextAdapter("Hello from a normal API response", {

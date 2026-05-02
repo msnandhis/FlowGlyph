@@ -3,7 +3,7 @@
 ## Core
 
 ```ts
-import { createFlowGlyph } from "@flowglyph/core";
+import { createFlowGlyph } from "flowglyph/core";
 
 const flow = createFlowGlyph({
   mode: "conversation",
@@ -57,7 +57,7 @@ import {
   rawTextAdapter,
   responseTextAdapter,
   sseAdapter
-} from "@flowglyph/adapters";
+} from "flowglyph/adapters";
 ```
 
 ### `rawTextAdapter(input, options?)`
@@ -129,7 +129,7 @@ The SDK packages do not depend on OpenAI. This route exists only to prove a real
 ## OpenAI Adapter
 
 ```ts
-import { openAIResponsesAdapter } from "@flowglyph/adapters-openai";
+import { openAIResponsesAdapter } from "flowglyph/adapters/openai";
 
 const response = await fetch("/api/openai-stream");
 await flow.consume(openAIResponsesAdapter(response));
@@ -140,7 +140,7 @@ This adapter maps OpenAI Responses API SSE events into FlowGlyph events. It does
 ## Styles
 
 ```ts
-import "@flowglyph/styles/styles.css";
+import "flowglyph/styles.css";
 ```
 
 Styles are optional and shipped as npm CSS. Apps can override the provided CSS variables or skip the package entirely.
@@ -148,10 +148,10 @@ Styles are optional and shipped as npm CSS. Apps can override the provided CSS v
 ## Markdown
 
 ```ts
-import { markdownToHtml } from "@flowglyph/markdown";
+import { markdownToHtml } from "flowglyph/markdown";
 ```
 
-`markdownToHtml` renders a small escaped markdown subset for streamed AI text. It can render code blocks with language labels and copy buttons through `@flowglyph/code`.
+`markdownToHtml` renders a small escaped markdown subset for streamed AI text. It can render code blocks with language labels and copy buttons through `flowglyph/code`.
 
 ```ts
 markdownToHtml(text, {
@@ -166,7 +166,7 @@ import {
   createLazyHighlighter,
   extractCodeFences,
   installCodeCopy
-} from "@flowglyph/code";
+} from "flowglyph/code";
 
 const blocks = extractCodeFences(markdown);
 const cleanup = installCodeCopy();
@@ -177,7 +177,7 @@ The code package detects fenced code blocks, renders labels/copy controls, and s
 ## DOM
 
 ```ts
-import { createDOMRenderer } from "@flowglyph/dom";
+import { createDOMRenderer } from "flowglyph/dom";
 
 const renderer = createDOMRenderer("#answer");
 const detach = renderer.attach(flow);
@@ -186,8 +186,8 @@ const detach = renderer.attach(flow);
 ## React
 
 ```tsx
-import { rawTextAdapter } from "@flowglyph/adapters";
-import { FlowGlyph } from "@flowglyph/react";
+import { rawTextAdapter } from "flowglyph/adapters";
+import { FlowGlyph } from "flowglyph/react";
 
 export function Demo() {
   return <FlowGlyph events={rawTextAdapter(["Hello", " world"])} />;
@@ -197,7 +197,7 @@ export function Demo() {
 For hook-based control:
 
 ```tsx
-import { useFlowGlyphStream, FlowGlyphView } from "@flowglyph/react";
+import { useFlowGlyphStream, FlowGlyphView } from "flowglyph/react";
 
 function Demo({ events }) {
   const { flow, cancel, retry } = useFlowGlyphStream({ events });

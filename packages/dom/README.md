@@ -1,18 +1,18 @@
-# @flowglyph/dom
+# flowglyph/dom
 
 Minimal DOM renderer for FlowGlyph.
 
 ## Install
 
 ```sh
-pnpm add @flowglyph/dom @flowglyph/core
+pnpm add flowglyph
 ```
 
 ## Usage
 
 ```ts
-import { createFlowGlyph } from "@flowglyph/core";
-import { createDOMRenderer } from "@flowglyph/dom";
+import { createFlowGlyph } from "flowglyph/core";
+import { createDOMRenderer } from "flowglyph/dom";
 
 const flow = createFlowGlyph();
 const renderer = createDOMRenderer("#answer");

@@ -1,6 +1,7 @@
 {
   "name": "@flowglyph/code",
   "version": "0.1.0",
+  "private": true,
   "description": "Lightweight code fence helpers for FlowGlyph.",
   "type": "module",
   "license": "MIT",

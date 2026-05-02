@@ -1,0 +1,105 @@
+{
+  "name": "flowglyph",
+  "version": "0.1.0",
+  "description": "Lightweight AI stream rendering SDK for JavaScript apps.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Nandhis",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "style": "./styles.css",
+  "files": [
+    "dist",
+    "styles.css",
+    "README.md"
+  ],
+  "keywords": [
+    "ai",
+    "ai-sdk",
+    "ai-ui",
+    "llm",
+    "streaming",
+    "typescript",
+    "react",
+    "openai",
+    "markdown"
+  ],
+  "homepage": "https://github.com/msnandhis/FlowGlyph#readme",
+  "bugs": {
+    "url": "https://github.com/msnandhis/FlowGlyph/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msnandhis/FlowGlyph.git",
+    "directory": "packages/flowglyph"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "require": "./dist/core.cjs"
+    },
+    "./adapters": {
+      "types": "./dist/adapters.d.ts",
+      "import": "./dist/adapters.js",
+      "require": "./dist/adapters.cjs"
+    },
+    "./adapters/openai": {
+      "types": "./dist/adapters/openai.d.ts",
+      "import": "./dist/adapters/openai.js",
+      "require": "./dist/adapters/openai.cjs"
+    },
+    "./dom": {
+      "types": "./dist/dom.d.ts",
+      "import": "./dist/dom.js",
+      "require": "./dist/dom.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "require": "./dist/react.cjs"
+    },
+    "./markdown": {
+      "types": "./dist/markdown.d.ts",
+      "import": "./dist/markdown.js",
+      "require": "./dist/markdown.cjs"
+    },
+    "./code": {
+      "types": "./dist/code.d.ts",
+      "import": "./dist/code.js",
+      "require": "./dist/code.cjs"
+    },
+    "./styles.css": "./styles.css"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts src/core.ts src/adapters.ts src/adapters/openai.ts src/dom.ts src/react.tsx src/markdown.ts src/code.ts --format esm,cjs --dts --clean --external react",
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18.3.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.7",
+    "react": "^19.2.5",
+    "vitest": "^4.1.5"
+  }
+}

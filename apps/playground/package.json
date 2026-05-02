@@ -1,5 +1,5 @@
 {
-  "name": "@flowglyph/playground",
+  "name": "flowglyph-playground",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,14 +9,7 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
-    "@flowglyph/adapters": "workspace:*",
-    "@flowglyph/adapters-openai": "workspace:*",
-    "@flowglyph/code": "workspace:*",
-    "@flowglyph/core": "workspace:*",
-    "@flowglyph/dom": "workspace:*",
-    "@flowglyph/markdown": "workspace:*",
-    "@flowglyph/react": "workspace:*",
-    "@flowglyph/styles": "workspace:*",
+    "flowglyph": "workspace:*",
     "@vitejs/plugin-react": "^6.0.1",
     "vite": "^8.0.10",
     "typescript": "^6.0.3",
