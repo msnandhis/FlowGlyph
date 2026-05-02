@@ -8,7 +8,7 @@ import { extractCodeFences } from "@flowglyph/code";
 import type { FlowGlyphEvent, FlowGlyphMode } from "@flowglyph/core";
 import { markdownToHtml } from "@flowglyph/markdown";
 import { FlowGlyphView, useFlowGlyphStream } from "@flowglyph/react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
 import "@flowglyph/styles/styles.css";
 import "./styles.css";
@@ -258,6 +258,10 @@ function createEvents(
   return createOpenAIAdapterStream(message, model);
 }
 
+function usesTextSpeed(activeCase: PlaygroundCase) {
+  return activeCase === "response" || activeCase === "markdown";
+}
+
 function StreamSurface({
   activeCase,
   message,
@@ -289,6 +293,9 @@ function StreamSurface({
           <strong>{state.status}</strong>
           <span>{state.messages.length} message(s)</span>
           <span>{getMode(activeCase)} mode</span>
+          {usesTextSpeed(activeCase) ? (
+            <span>{speed} chars/s applied</span>
+          ) : null}
           {activeCase === "markdown" ? (
             <span>{codeBlocks.length} code block(s)</span>
           ) : null}
@@ -325,6 +332,7 @@ function App() {
   const [submittedModel, setSubmittedModel] = useState(draftModel);
   const [speed, setSpeed] = useState(90);
   const [submittedSpeed, setSubmittedSpeed] = useState(speed);
+  const speedInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -353,26 +361,32 @@ function App() {
     };
   }, []);
 
-  const restart = () => {
-    setRun((value) => value + 1);
+  const readSpeedInput = () => {
+    const nextSpeed = Number(speedInputRef.current?.value ?? speed);
+    return Number.isFinite(nextSpeed) ? nextSpeed : speed;
   };
 
   const applyDraftSettings = () => {
+    const nextSpeed = readSpeedInput();
     setSubmittedMessage(draftMessage);
     setSubmittedModel(draftModel);
-    setSubmittedSpeed(speed);
+    setSpeed(nextSpeed);
+    setSubmittedSpeed(nextSpeed);
+  };
+
+  const runCase = (nextCase = activeCase) => {
+    applyDraftSettings();
+    setActiveCase(nextCase);
+    setRun((value) => value + 1);
   };
 
   const runSelectedCase = (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
-    applyDraftSettings();
-    restart();
+    runCase();
   };
 
   const runOpenAI = (nextCase: "openai-normalized" | "openai-adapter") => {
-    applyDraftSettings();
-    setActiveCase(nextCase);
-    restart();
+    runCase(nextCase);
   };
 
   const selectedCase = cases.find((item) => item.id === activeCase) ?? cases[0]!;
@@ -384,7 +398,7 @@ function App() {
           <p className="eyebrow">FlowGlyph playground</p>
           <h1>Test every SDK feature</h1>
         </div>
-        <button type="button" onClick={restart}>
+        <button type="button" onClick={() => runCase()}>
           Restart
         </button>
       </section>
@@ -395,8 +409,7 @@ function App() {
             className={item.id === activeCase ? "case-card active" : "case-card"}
             key={item.id}
             onClick={() => {
-              setActiveCase(item.id);
-              restart();
+              runCase(item.id);
             }}
             type="button"
           >
@@ -452,7 +465,8 @@ function App() {
             id="speed"
             max="220"
             min="20"
-            onChange={(event) => setSpeed(Number(event.target.value))}
+            onInput={(event) => setSpeed(Number(event.currentTarget.value))}
+            ref={speedInputRef}
             step="10"
             type="range"
             value={speed}
@@ -481,7 +495,7 @@ function App() {
         key={`${activeCase}-${run}`}
         message={submittedMessage}
         model={submittedModel}
-        onRetry={restart}
+        onRetry={() => runCase()}
         speed={submittedSpeed}
       />
     </main>
