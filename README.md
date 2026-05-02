@@ -123,6 +123,15 @@ const response = await fetch("/api/openai-stream");
 await flow.consume(openAIResponsesAdapter(response));
 ```
 
+## Guides
+
+- [React quickstart](docs/react-quickstart.md)
+- [Vanilla DOM quickstart](docs/vanilla-dom-quickstart.md)
+- [OpenAI adapter guide](docs/openai-adapter.md)
+- [Speed and pacing](docs/speed-pacing.md)
+- [Styling guide](docs/styling.md)
+- [API reference](docs/api.md)
+
 ## Workspace Commands
 
 ```sh
@@ -201,6 +210,7 @@ Implemented:
 - optional npm CSS package
 - markdown helper package
 - code fence helper package
+- code block language labels, copy helper, and lazy highlighter hook
 - React hook API
 - tool-call rendering in React and DOM
 - DOM renderer

@@ -5,11 +5,20 @@ Tiny markdown helpers for FlowGlyph text parts.
 ```tsx
 import { markdownToHtml } from "@flowglyph/markdown";
 import { FlowGlyph } from "@flowglyph/react";
+import { installCodeCopy } from "@flowglyph/code";
+
+useEffect(() => installCodeCopy(), []);
 
 <FlowGlyph
   events={events}
   renderText={(text) => (
-    <span dangerouslySetInnerHTML={{ __html: markdownToHtml(text) }} />
+    <span
+      dangerouslySetInnerHTML={{
+        __html: markdownToHtml(text, {
+          code: { copyButton: true }
+        })
+      }}
+    />
   )}
 />;
 ```

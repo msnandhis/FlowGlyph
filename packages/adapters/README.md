@@ -11,7 +11,11 @@ pnpm add @flowglyph/adapters @flowglyph/core
 ## Usage
 
 ```ts
-import { responseTextAdapter, sseAdapter } from "@flowglyph/adapters";
+import {
+  paceTextDeltasAdapter,
+  responseTextAdapter,
+  sseAdapter
+} from "@flowglyph/adapters";
 
 const response = await fetch("/api/chat", { method: "POST" });
 
@@ -33,10 +37,24 @@ await flow.consume(
 );
 ```
 
+For live provider streams that already emit FlowGlyph events:
+
+```ts
+await flow.consume(
+  paceTextDeltasAdapter(sseAdapter(response), {
+    speed: {
+      charsPerSecond: 120,
+      chunkSize: 4
+    }
+  })
+);
+```
+
 ## Included Adapters
 
 - `rawTextAdapter`
 - `responseTextAdapter`
+- `paceTextDeltasAdapter`
 - `sseAdapter`
 - `flowGlyphEventsAdapter`
 - `vercelUIMessageStreamAdapter`

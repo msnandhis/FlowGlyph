@@ -5,7 +5,7 @@ import {
   sseAdapter
 } from "@flowglyph/adapters";
 import { openAIResponsesAdapter } from "@flowglyph/adapters-openai";
-import { extractCodeFences } from "@flowglyph/code";
+import { extractCodeFences, installCodeCopy } from "@flowglyph/code";
 import type { FlowGlyphEvent, FlowGlyphMode } from "@flowglyph/core";
 import { markdownToHtml } from "@flowglyph/markdown";
 import { FlowGlyphView, useFlowGlyphStream } from "@flowglyph/react";
@@ -331,7 +331,15 @@ function StreamSurface({
       <FlowGlyphView
         flow={flow}
         renderText={(text) => (
-          <span dangerouslySetInnerHTML={{ __html: markdownToHtml(text) }} />
+          <span
+            dangerouslySetInnerHTML={{
+              __html: markdownToHtml(text, {
+                code: {
+                  copyButton: true
+                }
+              })
+            }}
+          />
         )}
       />
     </section>
@@ -378,6 +386,8 @@ function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => installCodeCopy(), []);
 
   const readSpeedInput = () => {
     const nextSpeed = Number(speedInputRef.current?.value ?? speed);

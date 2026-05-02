@@ -120,6 +120,9 @@ importers:
 
   packages/markdown:
     dependencies:
+      '@flowglyph/code':
+        specifier: workspace:0.1.0
+        version: link:../code
       '@flowglyph/core':
         specifier: workspace:0.1.0
         version: link:../core

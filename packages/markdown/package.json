@@ -47,6 +47,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@flowglyph/code": "workspace:0.1.0",
     "@flowglyph/core": "workspace:0.1.0"
   },
   "devDependencies": {

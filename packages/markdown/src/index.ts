@@ -1,7 +1,15 @@
+import {
+  renderCodeBlockHtml,
+  type CodeBlockHtmlOptions
+} from "@flowglyph/code";
 import type { FlowGlyphPlugin } from "@flowglyph/core";
 
 export type MarkdownOptions = {
   classPrefix?: string;
+};
+
+export type MarkdownRenderOptions = {
+  code?: CodeBlockHtmlOptions | undefined;
 };
 
 export function markdownPlugin(options: MarkdownOptions = {}): FlowGlyphPlugin {
@@ -19,9 +27,12 @@ export function markdownPlugin(options: MarkdownOptions = {}): FlowGlyphPlugin {
   };
 }
 
-export function markdownToHtml(markdown: string): string {
+export function markdownToHtml(
+  markdown: string,
+  options: MarkdownRenderOptions = {}
+): string {
   const blocks = splitBlocks(markdown);
-  return blocks.map(renderBlock).join("");
+  return blocks.map((block) => renderBlock(block, options)).join("");
 }
 
 export function inlineMarkdownToHtml(value: string): string {
@@ -154,7 +165,10 @@ function splitBlocks(markdown: string): MarkdownBlock[] {
   return blocks;
 }
 
-function renderBlock(block: MarkdownBlock): string {
+function renderBlock(
+  block: MarkdownBlock,
+  options: MarkdownRenderOptions
+): string {
   if (block.type === "heading") {
     return `<h${block.level}>${inlineMarkdownToHtml(block.value)}</h${block.level}>`;
   }
@@ -168,10 +182,11 @@ function renderBlock(block: MarkdownBlock): string {
   }
 
   if (block.type === "code") {
-    const language = block.language
-      ? ` data-language="${escapeHtml(block.language)}"`
-      : "";
-    return `<pre class="fg-code"><code${language}>${escapeHtml(block.value)}</code></pre>`;
+    return renderCodeBlockHtml({
+      code: block.value,
+      language: block.language,
+      ...options.code
+    });
   }
 
   return `<p>${inlineMarkdownToHtml(block.value)}</p>`;

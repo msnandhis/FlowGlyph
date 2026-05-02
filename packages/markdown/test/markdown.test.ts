@@ -17,4 +17,14 @@ describe("@flowglyph/markdown", () => {
   it("exports a plugin", () => {
     expect(markdownPlugin()).toMatchObject({ name: "flowglyph-markdown" });
   });
+
+  it("renders code blocks with optional copy controls", () => {
+    expect(
+      markdownToHtml("```ts\nconst x = 1;\n```", {
+        code: {
+          copyButton: true
+        }
+      })
+    ).toContain("data-flowglyph-copy-code");
+  });
 });

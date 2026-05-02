@@ -53,6 +53,7 @@ const disable = flow.use({
 
 ```ts
 import {
+  paceTextDeltasAdapter,
   rawTextAdapter,
   responseTextAdapter,
   sseAdapter
@@ -89,6 +90,18 @@ responseTextAdapter(response, { speed: { charsPerSecond: 80, chunkSize: 4 } });
 ```
 
 For JSON responses, FlowGlyph automatically looks for common fields like `text`, `content`, `message`, `answer`, and `output`. You can also provide `selectText`.
+
+### `paceTextDeltasAdapter(events, options?)`
+
+Applies display pacing to normalized live stream text deltas.
+
+```ts
+await flow.consume(
+  paceTextDeltasAdapter(sseAdapter(response), {
+    speed: { charsPerSecond: 120, chunkSize: 4 }
+  })
+);
+```
 
 ### `sseAdapter(response, options?)`
 
@@ -138,17 +151,28 @@ Styles are optional and shipped as npm CSS. Apps can override the provided CSS v
 import { markdownToHtml } from "@flowglyph/markdown";
 ```
 
-`markdownToHtml` renders a small escaped markdown subset for streamed AI text. Use a full markdown parser in your app when you need advanced syntax.
+`markdownToHtml` renders a small escaped markdown subset for streamed AI text. It can render code blocks with language labels and copy buttons through `@flowglyph/code`.
+
+```ts
+markdownToHtml(text, {
+  code: { copyButton: true }
+});
+```
 
 ## Code
 
 ```ts
-import { extractCodeFences } from "@flowglyph/code";
+import {
+  createLazyHighlighter,
+  extractCodeFences,
+  installCodeCopy
+} from "@flowglyph/code";
 
 const blocks = extractCodeFences(markdown);
+const cleanup = installCodeCopy();
 ```
 
-The code package detects fenced code blocks without bundling a syntax highlighter.
+The code package detects fenced code blocks, renders labels/copy controls, and supports lazy highlighter loading without bundling a syntax highlighter.
 
 ## DOM
 
