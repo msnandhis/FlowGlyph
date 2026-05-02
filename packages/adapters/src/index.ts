@@ -19,6 +19,10 @@ export type ResponseTextAdapterOptions = RawTextAdapterOptions & {
   selectText?: (value: unknown) => string;
 };
 
+export type PaceTextDeltasAdapterOptions = {
+  speed?: ResponseTextAdapterSpeed;
+};
+
 export async function* rawTextAdapter(
   input: AsyncIterable<string> | Iterable<string> | ReadableStream<Uint8Array>,
   options: RawTextAdapterOptions = {}
@@ -73,6 +77,51 @@ export async function* responseTextAdapter(
   }
 
   yield* rawTextAdapter(pacedChunks(), options);
+}
+
+export async function* paceTextDeltasAdapter(
+  input: AsyncIterable<FlowGlyphEvent> | Iterable<FlowGlyphEvent>,
+  options: PaceTextDeltasAdapterOptions = {}
+): AsyncIterable<FlowGlyphEvent> {
+  const speed = normalizeSpeed(options.speed);
+  const pacedPartIds = new Set<string>();
+
+  for await (const event of input) {
+    if (
+      event.type === "part.start" &&
+      (event.kind === "text" || event.kind === "reasoning")
+    ) {
+      pacedPartIds.add(event.partId);
+      yield event;
+      continue;
+    }
+
+    if (event.type === "part.end") {
+      pacedPartIds.delete(event.partId);
+      yield event;
+      continue;
+    }
+
+    if (
+      event.type === "part.delta" &&
+      pacedPartIds.has(event.partId) &&
+      typeof event.delta === "string"
+    ) {
+      for (const chunk of chunkText(event.delta, speed.chunkSize)) {
+        if (speed.delayMs > 0) {
+          await delay(speed.delayMs);
+        }
+
+        yield {
+          ...event,
+          delta: chunk
+        };
+      }
+      continue;
+    }
+
+    yield event;
+  }
 }
 
 export type FlowGlyphEventsAdapterOptions = {

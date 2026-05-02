@@ -1,4 +1,5 @@
 import {
+  paceTextDeltasAdapter,
   rawTextAdapter,
   responseTextAdapter,
   sseAdapter
@@ -209,7 +210,8 @@ async function* createSingleDemo(): AsyncIterable<FlowGlyphEvent> {
 
 async function* createOpenAINormalizedStream(
   message: string,
-  model: string
+  model: string,
+  speed: number
 ): AsyncIterable<FlowGlyphEvent> {
   const response = await fetch("/api/openai", {
     method: "POST",
@@ -219,12 +221,18 @@ async function* createOpenAINormalizedStream(
     body: JSON.stringify({ message, model })
   });
 
-  yield* sseAdapter(response, { provider: "openai" });
+  yield* paceTextDeltasAdapter(sseAdapter(response, { provider: "openai" }), {
+    speed: {
+      charsPerSecond: speed,
+      chunkSize: 4
+    }
+  });
 }
 
 async function* createOpenAIAdapterStream(
   message: string,
-  model: string
+  model: string,
+  speed: number
 ): AsyncIterable<FlowGlyphEvent> {
   const response = await fetch("/api/openai/raw", {
     method: "POST",
@@ -234,7 +242,12 @@ async function* createOpenAIAdapterStream(
     body: JSON.stringify({ message, model })
   });
 
-  yield* openAIResponsesAdapter(response);
+  yield* paceTextDeltasAdapter(openAIResponsesAdapter(response), {
+    speed: {
+      charsPerSecond: speed,
+      chunkSize: 4
+    }
+  });
 }
 
 function getMode(activeCase: PlaygroundCase): FlowGlyphMode {
@@ -253,13 +266,18 @@ function createEvents(
   if (activeCase === "conversation") return createConversationDemo();
   if (activeCase === "single") return createSingleDemo();
   if (activeCase === "openai-normalized") {
-    return createOpenAINormalizedStream(message, model);
+    return createOpenAINormalizedStream(message, model, speed);
   }
-  return createOpenAIAdapterStream(message, model);
+  return createOpenAIAdapterStream(message, model, speed);
 }
 
 function usesTextSpeed(activeCase: PlaygroundCase) {
-  return activeCase === "response" || activeCase === "markdown";
+  return (
+    activeCase === "response" ||
+    activeCase === "markdown" ||
+    activeCase === "openai-normalized" ||
+    activeCase === "openai-adapter"
+  );
 }
 
 function StreamSurface({

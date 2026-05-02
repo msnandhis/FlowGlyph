@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { rawTextAdapter, responseTextAdapter, sseAdapter } from "../src/index";
+import {
+  paceTextDeltasAdapter,
+  rawTextAdapter,
+  responseTextAdapter,
+  sseAdapter
+} from "../src/index";
 
 describe("@flowglyph/adapters", () => {
   it("converts text chunks to FlowGlyph events", async () => {
@@ -86,5 +91,37 @@ describe("@flowglyph/adapters", () => {
       partId: "m1:text",
       delta: "JSON answer"
     });
+  });
+
+  it("paces text deltas from normalized provider streams", async () => {
+    const events = [];
+
+    for await (const event of paceTextDeltasAdapter(
+      [
+        { type: "message.start", messageId: "m1" },
+        { type: "part.start", messageId: "m1", partId: "p1", kind: "text" },
+        { type: "part.delta", messageId: "m1", partId: "p1", delta: "abcdef" },
+        { type: "part.end", messageId: "m1", partId: "p1" },
+        { type: "message.finish", messageId: "m1", status: "complete" }
+      ],
+      {
+        speed: {
+          chunkSize: 2,
+          delayMs: 0
+        }
+      }
+    )) {
+      events.push(event);
+    }
+
+    expect(events).toMatchObject([
+      { type: "message.start", messageId: "m1" },
+      { type: "part.start", messageId: "m1", partId: "p1" },
+      { type: "part.delta", messageId: "m1", partId: "p1", delta: "ab" },
+      { type: "part.delta", messageId: "m1", partId: "p1", delta: "cd" },
+      { type: "part.delta", messageId: "m1", partId: "p1", delta: "ef" },
+      { type: "part.end", messageId: "m1", partId: "p1" },
+      { type: "message.finish", messageId: "m1", status: "complete" }
+    ]);
   });
 });
