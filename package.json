@@ -8,7 +8,7 @@
     "build": "pnpm -r --filter './packages/**' build",
     "dev": "pnpm --filter @flowglyph/playground dev",
     "test": "pnpm build && pnpm -r --filter './packages/**' test",
-    "typecheck": "pnpm -r --filter './packages/**' typecheck",
+    "typecheck": "pnpm build && pnpm -r --filter './packages/**' typecheck",
     "pack:dry-run": "pnpm -r --filter './packages/**' exec npm pack --dry-run",
     "clean": "pnpm -r --filter './packages/**' clean && rm -rf apps/playground/dist"
   },

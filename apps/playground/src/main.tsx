@@ -4,9 +4,11 @@ import {
   sseAdapter
 } from "@flowglyph/adapters";
 import type { FlowGlyphEvent } from "@flowglyph/core";
+import { markdownToHtml } from "@flowglyph/markdown";
 import { FlowGlyph, useFlowGlyph } from "@flowglyph/react";
 import { StrictMode, useEffect, useMemo, useState, type FormEvent } from "react";
 import { createRoot } from "react-dom/client";
+import "@flowglyph/styles/styles.css";
 import "./styles.css";
 
 function createDemoStream(text: string, charsPerSecond: number) {
@@ -86,7 +88,7 @@ function App() {
       }
 
       return createDemoStream(
-        "FlowGlyph keeps AI stream rendering focused: normalized events, a tiny core, adapters for providers, and thin framework bindings.",
+        "### FlowGlyph\n\n- Normalizes provider streams\n- Renders partial text cleanly\n- Keeps styles optional through npm",
         speed
       );
     },
@@ -166,6 +168,9 @@ function App() {
         events={events}
         key={`${useOpenAI ? "openai" : "demo"}-${run}`}
         onRetry={restart}
+        renderText={(text) => (
+          <span dangerouslySetInnerHTML={{ __html: markdownToHtml(text) }} />
+        )}
       >
         <Controls />
       </FlowGlyph>

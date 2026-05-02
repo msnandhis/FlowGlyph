@@ -1,0 +1,46 @@
+{
+  "name": "@flowglyph/styles",
+  "version": "0.1.0",
+  "description": "Optional base CSS for FlowGlyph renderers.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Nandhis",
+  "sideEffects": [
+    "*.css"
+  ],
+  "style": "./styles.css",
+  "files": [
+    "styles.css",
+    "README.md"
+  ],
+  "keywords": [
+    "ai",
+    "ai-ui",
+    "llm",
+    "streaming",
+    "css",
+    "typescript"
+  ],
+  "homepage": "https://github.com/msnandhis/FlowGlyph#readme",
+  "bugs": {
+    "url": "https://github.com/msnandhis/FlowGlyph/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/msnandhis/FlowGlyph.git",
+    "directory": "packages/styles"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "exports": {
+    ".": "./styles.css",
+    "./styles.css": "./styles.css"
+  },
+  "scripts": {
+    "build": "echo \"styles ready\"",
+    "clean": "echo \"styles clean\"",
+    "test": "echo \"no tests\"",
+    "typecheck": "echo \"no typecheck\""
+  }
+}

@@ -2,12 +2,16 @@ import {
   createFlowGlyph,
   type FlowGlyph,
   type FlowGlyphEvent,
+  type FlowGlyphMessage,
+  type FlowGlyphMode,
+  type FlowGlyphPart,
   type FlowGlyphPlugin,
   type FlowGlyphState
 } from "@flowglyph/core";
 import {
   createContext,
   createElement,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -21,6 +25,7 @@ export type FlowGlyphProviderProps = {
   events?: AsyncIterable<FlowGlyphEvent> | Iterable<FlowGlyphEvent>;
   plugins?: FlowGlyphPlugin[];
   onRetry?: () => void | Promise<void>;
+  mode?: FlowGlyphMode;
 };
 
 const FlowGlyphContext = createContext<FlowGlyph | null>(null);
@@ -29,9 +34,10 @@ export function FlowGlyphProvider({
   children,
   events,
   plugins = [],
-  onRetry
+  onRetry,
+  mode
 }: FlowGlyphProviderProps) {
-  const flow = useMemo(() => createFlowGlyph({ onRetry }), [onRetry]);
+  const flow = useMemo(() => createFlowGlyph({ onRetry, mode }), [mode, onRetry]);
   const pluginNames = plugins.map((plugin) => plugin.name).join("\u0000");
 
   useEffect(() => {
@@ -79,12 +85,79 @@ export function useFlowGlyphState(flow?: FlowGlyph): FlowGlyphState {
   );
 }
 
+export type UseFlowGlyphStreamOptions = {
+  events?: AsyncIterable<FlowGlyphEvent> | Iterable<FlowGlyphEvent>;
+  plugins?: FlowGlyphPlugin[];
+  onRetry?: () => void | Promise<void>;
+  mode?: FlowGlyphMode;
+};
+
+export function useFlowGlyphStream({
+  events,
+  plugins = [],
+  onRetry,
+  mode
+}: UseFlowGlyphStreamOptions = {}) {
+  const flow = useMemo(() => createFlowGlyph({ onRetry, mode }), [mode, onRetry]);
+  const state = useFlowGlyphState(flow);
+  const pluginNames = plugins.map((plugin) => plugin.name).join("\u0000");
+
+  useEffect(() => {
+    const cleanups = plugins.map((plugin) => flow.use(plugin));
+    return () => {
+      for (const cleanup of cleanups.reverse()) cleanup();
+    };
+  }, [flow, pluginNames]);
+
+  useEffect(() => {
+    if (!events) return;
+
+    void flow.consume(events);
+
+    return () => {
+      flow.cancel();
+    };
+  }, [events, flow]);
+
+  const consume = useCallback(
+    (nextEvents: AsyncIterable<FlowGlyphEvent> | Iterable<FlowGlyphEvent>) =>
+      flow.consume(nextEvents),
+    [flow]
+  );
+
+  return {
+    flow,
+    state,
+    consume,
+    cancel: flow.cancel,
+    retry: flow.retry
+  };
+}
+
+export type FlowGlyphRenderPart = (
+  part: FlowGlyphPart,
+  message: FlowGlyphMessage
+) => ReactNode;
+
+export type FlowGlyphRenderText = (
+  text: string,
+  part: FlowGlyphPart,
+  message: FlowGlyphMessage
+) => ReactNode;
+
 export type FlowGlyphViewProps = {
   flow?: FlowGlyph;
   className?: string | undefined;
+  renderPart?: FlowGlyphRenderPart | undefined;
+  renderText?: FlowGlyphRenderText | undefined;
 };
 
-export function FlowGlyphView({ flow, className = "fg-root" }: FlowGlyphViewProps) {
+export function FlowGlyphView({
+  flow,
+  className = "fg-root",
+  renderPart,
+  renderText
+}: FlowGlyphViewProps) {
   const state = useFlowGlyphState(flow);
 
   return (
@@ -96,15 +169,27 @@ export function FlowGlyphView({ flow, className = "fg-root" }: FlowGlyphViewProp
           key={message.id}
         >
           {message.parts.map((part) => {
+            const customPart = renderPart?.(part, message);
+            if (customPart !== undefined && customPart !== null) {
+              return createElement(
+                "span",
+                { "data-flowglyph-custom-part": part.id, key: part.id },
+                customPart
+              );
+            }
+
             if (part.kind === "text" || part.kind === "reasoning") {
+              const TextTag = renderText ? "div" : "span";
               return (
-                <span
+                <TextTag
                   className={`fg-part fg-${part.kind}`}
                   data-flowglyph-part-state={part.state}
                   key={part.id}
                 >
-                  {part.text}
-                </span>
+                  {renderText
+                    ? renderText(part.text ?? "", part, message)
+                    : part.text}
+                </TextTag>
               );
             }
 
@@ -122,9 +207,21 @@ export function FlowGlyphView({ flow, className = "fg-root" }: FlowGlyphViewProp
 
             if (part.kind === "tool") {
               return (
-                <div className="fg-part fg-tool" key={part.id}>
-                  <strong>{part.name}</strong>
-                </div>
+                <details
+                  className="fg-part fg-tool"
+                  data-flowglyph-part-state={part.state}
+                  key={part.id}
+                  open={part.state !== "complete"}
+                >
+                  <summary>{part.label ?? part.name ?? "Tool call"}</summary>
+                  {part.value === undefined ? null : (
+                    <pre>
+                      {typeof part.value === "string"
+                        ? part.value
+                        : JSON.stringify(part.value, null, 2)}
+                    </pre>
+                  )}
+                </details>
               );
             }
 
@@ -159,12 +256,15 @@ export function FlowGlyphComponent({
   flow,
   events,
   plugins,
-  onRetry
+  onRetry,
+  mode,
+  renderPart,
+  renderText
 }: FlowGlyphComponentProps) {
   const ownedFlowRef = useRef<FlowGlyph | null>(null);
 
   if (!flow && !ownedFlowRef.current) {
-    ownedFlowRef.current = createFlowGlyph({ onRetry });
+    ownedFlowRef.current = createFlowGlyph({ onRetry, mode });
   }
 
   const activeFlow = flow ?? ownedFlowRef.current!;
@@ -189,7 +289,12 @@ export function FlowGlyphComponent({
   return (
     <FlowGlyphContext.Provider value={activeFlow}>
       {children}
-      <FlowGlyphView className={className} flow={activeFlow} />
+      <FlowGlyphView
+        className={className}
+        flow={activeFlow}
+        renderPart={renderPart}
+        renderText={renderText}
+      />
     </FlowGlyphContext.Provider>
   );
 }

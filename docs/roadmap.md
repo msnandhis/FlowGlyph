@@ -9,17 +9,22 @@
 - `@flowglyph/dom`
 - `@flowglyph/react`
 - `responseTextAdapter` for normal non-streaming API responses
+- configurable response display speed
+- `@flowglyph/styles`
+- `@flowglyph/markdown`
+- `@flowglyph/code`
+- `@flowglyph/adapters-openai`
+- conversation and single-message modes
+- React hook API
+- tool-call renderer in React and DOM
 - Vite playground
 - build, typecheck, and test scripts
 
 ## Next
 
 - strengthen Vercel UI message stream mapping
-- add playground controls for simulated response speed
 - add DOM renderer tests with a browser-like environment
 - add React rendering tests
-- add markdown plugin
-- add code block plugin
 - add bundle size checks
 - add CI
 

@@ -102,7 +102,12 @@ function reconcileParts(
     const partNode = getOrCreatePartNode(messageNode, part, partNodes, classPrefix);
     partNode.dataset.flowglyphPartKind = part.kind;
     partNode.dataset.flowglyphPartState = part.state;
-    partNode.textContent = renderPartText(part);
+
+    if (part.kind === "tool") {
+      renderToolPart(partNode, part);
+    } else {
+      partNode.textContent = renderPartText(part);
+    }
   }
 
   for (const [id, node] of partNodes) {
@@ -142,6 +147,8 @@ function getOrCreatePartNode(
   const node =
     part.kind === "text" || part.kind === "reasoning"
       ? document.createElement("span")
+      : part.kind === "tool"
+        ? document.createElement("details")
       : document.createElement("div");
   node.className = `${classPrefix}-part ${classPrefix}-${part.kind}`;
   node.dataset.flowglyphPartId = part.id;
@@ -172,6 +179,26 @@ function renderPartText(part: FlowGlyphPart) {
   if (typeof part.value === "string") return part.value;
   if (part.value === undefined) return "";
   return JSON.stringify(part.value, null, 2);
+}
+
+function renderToolPart(node: HTMLElement, part: FlowGlyphPart) {
+  node.textContent = "";
+  if (node instanceof HTMLDetailsElement) {
+    node.open = part.state !== "complete";
+  }
+
+  const summary = document.createElement("summary");
+  summary.textContent = part.label ?? part.name ?? "Tool call";
+  node.append(summary);
+
+  if (part.value === undefined) return;
+
+  const body = document.createElement("pre");
+  body.textContent =
+    typeof part.value === "string"
+      ? part.value
+      : JSON.stringify(part.value, null, 2);
+  node.append(body);
 }
 
 function resolveTarget(target: string | HTMLElement) {

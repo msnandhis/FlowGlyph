@@ -7,6 +7,8 @@ export type FlowGlyphStatus =
   | "aborted"
   | "error";
 
+export type FlowGlyphMode = "conversation" | "single";
+
 export type FlowGlyphPartKind =
   | "text"
   | "reasoning"
@@ -156,12 +158,14 @@ export type FlowGlyphPluginAPI = {
 export type FlowGlyphPlugin = {
   name: string;
   version?: string;
+  enabled?: boolean;
   setup: (api: FlowGlyphPluginAPI) => void | (() => void);
 };
 
 export type FlowGlyphOptions = {
   onRetry?: (() => void | Promise<void>) | undefined;
   now?: (() => number) | undefined;
+  mode?: FlowGlyphMode | undefined;
 };
 
 export type FlowGlyph = {
@@ -194,6 +198,7 @@ const textLikeKinds = new Set<FlowGlyphPartKind>(["text", "reasoning"]);
 
 export function createFlowGlyph(options: FlowGlyphOptions = {}): FlowGlyph {
   const now = options.now ?? Date.now;
+  const mode = options.mode ?? "conversation";
   const listeners = new Map<FlowGlyphEventName, ListenerSet>();
   const stateListeners = new Set<FlowGlyphStateListener>();
   const pluginCleanups = new Map<string, () => void>();
@@ -212,7 +217,7 @@ export function createFlowGlyph(options: FlowGlyphOptions = {}): FlowGlyph {
 
   const dispatch = (event: FlowGlyphEvent) => {
     emit("event", event);
-    updateState(reduceState(state, event, now()));
+    updateState(reduceState(state, event, now(), mode));
   };
 
   const api: FlowGlyphPluginAPI = {
@@ -266,6 +271,10 @@ export function createFlowGlyph(options: FlowGlyphOptions = {}): FlowGlyph {
 
   return {
     use(plugin) {
+      if (plugin.enabled === false) {
+        return () => undefined;
+      }
+
       pluginCleanups.get(plugin.name)?.();
       const cleanup = plugin.setup(api) ?? (() => undefined);
       pluginCleanups.set(plugin.name, cleanup);
@@ -335,7 +344,8 @@ function createInitialState(updatedAt: number): FlowGlyphState {
 function reduceState(
   state: FlowGlyphState,
   event: FlowGlyphEvent,
-  timestamp: number
+  timestamp: number,
+  mode: FlowGlyphMode
 ): FlowGlyphState {
   if (event.type === "unknown") {
     return { ...state, updatedAt: timestamp };
@@ -356,13 +366,15 @@ function reduceState(
     };
 
     const messages =
-      existingIndex >= 0
-        ? replaceAt(state.messages, existingIndex, {
-            ...state.messages[existingIndex]!,
-            ...message,
-            createdAt: state.messages[existingIndex]!.createdAt
-          })
-        : [...state.messages, message];
+      mode === "single" && existingIndex < 0
+        ? [message]
+        : existingIndex >= 0
+          ? replaceAt(state.messages, existingIndex, {
+              ...state.messages[existingIndex]!,
+              ...message,
+              createdAt: state.messages[existingIndex]!.createdAt
+            })
+          : [...state.messages, message];
 
     return {
       ...state,

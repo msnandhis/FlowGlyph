@@ -36,14 +36,18 @@ It focuses on one job:
 @flowglyph/dom
 @flowglyph/react
 @flowglyph/adapters
+@flowglyph/adapters-openai
+@flowglyph/styles
+@flowglyph/markdown
+@flowglyph/code
 ```
 
-Future packages may include markdown, code highlighting, Vue, Angular, Svelte, Solid, analytics, enterprise observability, and advanced renderers.
+Future packages may include Vue, Angular, Svelte, Solid, Anthropic/Gemini adapters, analytics, enterprise observability, and advanced renderers.
 
 ## Install
 
 ```sh
-pnpm add @flowglyph/core @flowglyph/adapters
+pnpm add @flowglyph/core @flowglyph/adapters @flowglyph/styles
 ```
 
 For DOM rendering:
@@ -58,14 +62,21 @@ For React:
 pnpm add @flowglyph/react react
 ```
 
+Optional feature packages:
+
+```sh
+pnpm add @flowglyph/markdown @flowglyph/code @flowglyph/adapters-openai
+```
+
 ## Quick Start
 
 ```ts
 import { createFlowGlyph } from "@flowglyph/core";
 import { createDOMRenderer } from "@flowglyph/dom";
 import { sseAdapter } from "@flowglyph/adapters";
+import "@flowglyph/styles/styles.css";
 
-const flow = createFlowGlyph();
+const flow = createFlowGlyph({ mode: "conversation" });
 const renderer = createDOMRenderer("#answer");
 const detach = renderer.attach(flow);
 
@@ -84,10 +95,32 @@ React:
 ```tsx
 import { rawTextAdapter } from "@flowglyph/adapters";
 import { FlowGlyph } from "@flowglyph/react";
+import "@flowglyph/styles/styles.css";
 
 export function AssistantAnswer() {
   return <FlowGlyph events={rawTextAdapter(["Hello", " world"])} />;
 }
+```
+
+Normal non-streaming responses can be displayed with a paced stream effect:
+
+```ts
+import { responseTextAdapter } from "@flowglyph/adapters";
+
+await flow.consume(
+  responseTextAdapter(await fetch("/api/answer"), {
+    speed: { charsPerSecond: 90, chunkSize: 4 }
+  })
+);
+```
+
+OpenAI Responses API streams can be normalized without bundling the OpenAI SDK:
+
+```ts
+import { openAIResponsesAdapter } from "@flowglyph/adapters-openai";
+
+const response = await fetch("/api/openai-stream");
+await flow.consume(openAIResponsesAdapter(response));
 ```
 
 ## Workspace Commands
@@ -112,6 +145,10 @@ The public npm packages are prepared as scoped packages:
 @flowglyph/adapters
 @flowglyph/dom
 @flowglyph/react
+@flowglyph/adapters-openai
+@flowglyph/styles
+@flowglyph/markdown
+@flowglyph/code
 ```
 
 Before publishing:
@@ -158,6 +195,14 @@ Implemented:
 - raw text adapter
 - SSE adapter
 - Vercel UI message stream adapter starter
+- OpenAI Responses API stream adapter
+- normal response pacing with configurable speed
+- conversation and single-message modes
+- optional npm CSS package
+- markdown helper package
+- code fence helper package
+- React hook API
+- tool-call rendering in React and DOM
 - DOM renderer
 - React wrapper
 - Vite playground

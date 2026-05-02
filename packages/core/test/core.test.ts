@@ -82,4 +82,30 @@ describe("createFlowGlyph", () => {
 
     expect(retries).toBe(1);
   });
+
+  it("can keep only the latest message in single mode", async () => {
+    const flow = createFlowGlyph({ mode: "single" });
+
+    flow.dispatch({ type: "message.start", messageId: "m1" });
+    flow.dispatch({ type: "message.finish", messageId: "m1", status: "complete" });
+    flow.dispatch({ type: "message.start", messageId: "m2" });
+
+    expect(flow.getState().messages).toHaveLength(1);
+    expect(flow.getState().messages[0]?.id).toBe("m2");
+  });
+
+  it("skips disabled plugins", () => {
+    const flow = createFlowGlyph();
+    let seen = 0;
+
+    flow.use({
+      name: "disabled",
+      enabled: false,
+      setup() {
+        seen += 1;
+      }
+    });
+
+    expect(seen).toBe(0);
+  });
 });
